@@ -1,0 +1,52 @@
+SilverStripe\Security\Group:
+  administrators:
+    Title: Administrators
+  site-owners:
+    Title: "Site Owners"
+
+SilverStripe\Security\Permission:
+  administrators:
+    Code: ADMIN
+    Type: 1
+    Group: =>SilverStripe\Security\Group.administrators
+  social:
+    Code: Social_CRUD
+    Type: 1
+    Group: =>SilverStripe\Security\Group.site-owners
+
+SilverStripe\Security\Member:
+  admin:
+    FirstName: Default
+    Surname: Admin
+    Email: admin@dynamicagency.com
+    Groups: =>SilverStripe\Security\Group.administrators
+  site-owner:
+    FirstName: "Site"
+    Surname: "Owner"
+    Email: "owner"
+    Password: "owner"
+    Groups: =>SilverStripe\Security\Group.site-owners
+  default:
+    FirstName: Default
+    Surname: User
+    Email: user@dynamicagency.com
+
+Dynamic\SiteTools\Tests\TestOnly\Page\TestPage:
+  default:
+    Title: "Test Page"
+  parent:
+    Title: "Parent Page"
+    Content: "<p>Content</p>"
+  subpage:
+    Title: "Child Page"
+    ParentID: =>Dynamic\SiteTools\Tests\TestOnly\Page\TestPage.parent
+
+SilverStripe\Assets\Image:
+  preview:
+    Title: "Preview Image"
+  logo:
+    Name: "Logo"
+
+Dynamic\SiteTools\Model\HeaderImage:
+  header:
+    Title: "Header Image"
