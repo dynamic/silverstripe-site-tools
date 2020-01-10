@@ -17,8 +17,7 @@
     "require": {
         "dynamic/silverstripe-linkable": "^1.0",
         "silvershop/silverstripe-hasonefield": "^2.1",
-        "silverstripe/framework": "^4.0",
-        "silverstripe/admin": "^1.0",
+        "silverstripe/recipe-cms": "^4.0",
         "silverstripe/vendor-plugin": "^1.0",
         "symbiote/silverstripe-gridfieldextensions": "^3.0",
         "unclecheese/display-logic": "^2.0"
