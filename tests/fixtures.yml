@@ -31,16 +31,6 @@ SilverStripe\Security\Member:
     Surname: User
     Email: user@dynamicagency.com
 
-Dynamic\SiteTools\Tests\TestOnly\Page\TestPage:
-  default:
-    Title: "Test Page"
-  parent:
-    Title: "Parent Page"
-    Content: "<p>Content</p>"
-  subpage:
-    Title: "Child Page"
-    ParentID: =>Dynamic\SiteTools\Tests\TestOnly\Page\TestPage.parent
-
 SilverStripe\Assets\Image:
   preview:
     Title: "Preview Image"
