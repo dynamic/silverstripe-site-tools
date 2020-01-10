@@ -22,7 +22,7 @@ class PreviewExtensionTest extends SapphireTest
     );
 
     /**
-     * @var array 
+     * @var array
      */
     protected static $required_extensions = [
         \Page::class => [
