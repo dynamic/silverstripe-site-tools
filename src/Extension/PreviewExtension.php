@@ -135,7 +135,8 @@ class PreviewExtension extends DataExtension
     {
         if (!$this->owner->AbstractFirstParagraph && $this->owner->Abstract) {
             return $this->owner->Abstract;
-        } elseif ((
+        } elseif (
+            (
                 !$this->owner->AbstractFirstParagraph && !$this->owner->Abstract
             ) || $this->owner->AbstractFirstParagraph
         ) {
