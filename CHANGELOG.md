@@ -1,6 +1,14 @@
 # Changelog
 
-## [1.0.0](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.0) (2020-03-23)
+## [1.0.1](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.1) (2020-03-24)
+
+[Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.0.0...1.0.1)
+
+**Merged pull requests:**
+
+- FEATURE migrate PrevNextExtension [\#9](https://github.com/dynamic/silverstripe-site-tools/pull/9) ([jsirish](https://github.com/jsirish))
+
+## [1.0.0](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.0) (2020-03-24)
 
 [Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/8f135003be80bbc80390b37c93bddd5e97070897...1.0.0)
 
