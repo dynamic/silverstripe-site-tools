@@ -1,0 +1,5 @@
+---
+Name: silverstripe-site-tools-config
+---
+Dynamic\SiteTools\Extension\ContactDataExtension:
+  contact_tab_name: 'Contact'
