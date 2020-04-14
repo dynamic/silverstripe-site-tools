@@ -1,6 +1,18 @@
 # Changelog
 
-## [1.0.1](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.1) (2020-03-24)
+## [1.0.2](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.2) (2020-04-14)
+
+[Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.0.1...1.0.2)
+
+**Closed issues:**
+
+- CompanyAddress - add phone, phone2, fax, email fields [\#11](https://github.com/dynamic/silverstripe-site-tools/issues/11)
+
+**Merged pull requests:**
+
+- FEATURE ContactDataExtension [\#12](https://github.com/dynamic/silverstripe-site-tools/pull/12) ([jsirish](https://github.com/jsirish))
+
+## [1.0.1](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.1) (2020-03-25)
 
 [Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.0.0...1.0.1)
 
