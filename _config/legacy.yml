@@ -1,0 +1,6 @@
+---
+Name: silverstripe-site-tools-legacy
+---
+SilverStripe\ORM\DatabaseAdmin:
+  classname_value_remapping:
+    Dynamic\CoreTools\Model\HeaderImage: Dynamic\SiteTools\Model\HeaderImage
