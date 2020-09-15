@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.3](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.3) (2020-09-15)
+
+[Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.0.2...1.0.3)
+
+**Merged pull requests:**
+
+- BUGFIX legacy.yml for HeaderImage classname migration [\#13](https://github.com/dynamic/silverstripe-site-tools/pull/13) ([jsirish](https://github.com/jsirish))
+
 ## [1.0.2](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.2) (2020-04-14)
 
 [Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.0.1...1.0.2)
