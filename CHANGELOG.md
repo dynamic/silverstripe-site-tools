@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/dynamic/silverstripe-site-tools/tree/1.1.0) (2020-09-21)
+
+[Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.0.3...1.1.0)
+
+**Merged pull requests:**
+
+- UPDATE hasonefield version constraint [\#15](https://github.com/dynamic/silverstripe-site-tools/pull/15) ([muskie9](https://github.com/muskie9))
+
 ## [1.0.3](https://github.com/dynamic/silverstripe-site-tools/tree/1.0.3) (2020-09-15)
 
 [Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.0.2...1.0.3)
