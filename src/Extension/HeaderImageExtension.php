@@ -6,6 +6,7 @@ use Dynamic\SiteTools\Model\HeaderImage;
 use SilverShop\HasOneField\HasOneButtonField;
 use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\FieldGroup;
+use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 use SilverStripe\Forms\HiddenField;
 use SilverStripe\Forms\LabelField;
 use SilverStripe\Forms\LiteralField;
@@ -44,8 +45,10 @@ class HeaderImageExtension extends DataExtension
 
         $header_field = FieldGroup::create(
             $img_field,
-            HasOneButtonField::create($this->owner, "HeaderImage", '', '')
+            $headerHasOne = HasOneButtonField::create($this->owner, "HeaderImage", '', '')
         )->setTitle('Header Image');
+
+        $headerHasOne->getConfig()->removeComponentsByType(GridFieldAddExistingAutocompleter::class);
 
         $fields->insertAfter(
             'Title',
