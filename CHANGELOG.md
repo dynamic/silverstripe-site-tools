@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.1.1](https://github.com/dynamic/silverstripe-site-tools/tree/1.1.1) (2020-12-02)
+
+[Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.1.0...1.1.1)
+
+**Fixed bugs:**
+
+- BUG link existing doesn't work for HasOneButtonField, disable feature [\#10](https://github.com/dynamic/silverstripe-site-tools/issues/10)
+
+**Merged pull requests:**
+
+- BUGFIX Link Existing doesn't work for HeaderImage field [\#16](https://github.com/dynamic/silverstripe-site-tools/pull/16) ([muskie9](https://github.com/muskie9))
+
 ## [1.1.0](https://github.com/dynamic/silverstripe-site-tools/tree/1.1.0) (2020-09-21)
 
 [Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.0.3...1.1.0)
