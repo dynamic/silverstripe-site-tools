@@ -40,3 +40,9 @@ SilverStripe\Assets\Image:
 Dynamic\SiteTools\Model\HeaderImage:
   header:
     Title: "Header Image"
+
+SilverStripe\Blog\Model\Blog:
+  default:
+    Title: "Blog"
+
+
