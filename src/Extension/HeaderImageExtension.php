@@ -4,17 +4,12 @@ namespace Dynamic\SiteTools\Extension;
 
 use Dynamic\SiteTools\Model\HeaderImage;
 use SilverShop\HasOneField\HasOneButtonField;
-use SilverStripe\Forms\CompositeField;
 use SilverStripe\Forms\FieldGroup;
 use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 use SilverStripe\Forms\HiddenField;
-use SilverStripe\Forms\LabelField;
 use SilverStripe\Forms\LiteralField;
-use SilverStripe\Forms\ReadonlyField;
 use SilverStripe\ORM\DataExtension;
 use SilverStripe\Forms\FieldList;
-use SilverStripe\AssetAdmin\Forms\UploadField;
-use SilverStripe\Assets\Image;
 
 /**
  * Class HeaderImageDataExtension.

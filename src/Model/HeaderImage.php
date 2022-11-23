@@ -2,8 +2,8 @@
 
 namespace Dynamic\SiteTools\Model;
 
-use Sheadawson\Linkable\Forms\LinkField;
-use Sheadawson\Linkable\Models\Link;
+use gorriecoe\Link\Models\Link;
+use gorriecoe\LinkField\LinkField;
 use SilverStripe\AssetAdmin\Forms\UploadField;
 use SilverStripe\Assets\Image;
 use SilverStripe\CMS\Model\SiteTree;
@@ -54,9 +54,9 @@ class HeaderImage extends DataObject
                 'PageID',
             ]);
 
-            $fields->insertAfter(
+            $fields->insertBefore(
                 'Content',
-                LinkField::create('HeaderLinkID', 'Link')
+                LinkField::create('HeaderLink', 'Link', $this)
             );
 
             $image_field = UploadField::create('Image', 'Header Image')
@@ -73,6 +73,9 @@ class HeaderImage extends DataObject
                 'Title',
                 $image_field
             );
+
+            $fields->dataFieldByName('Content')
+                ->setRows(8);
         });
 
         return parent::getCMSFields();
