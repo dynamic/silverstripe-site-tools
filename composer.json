@@ -17,9 +17,8 @@
     "require": {
         "gorriecoe/silverstripe-linkfield": "^1.0",
         "silvershop/silverstripe-hasonefield": "^2.1 || ^3.0",
-        "silverstripe/recipe-cms": "^4.0",
-        "silverstripe/vendor-plugin": "^1.0",
-        "symbiote/silverstripe-gridfieldextensions": "^3.0",
+        "silverstripe/recipe-cms": "^4.0 || ^5",
+        "symbiote/silverstripe-gridfieldextensions": "^3.0 || ^4",
         "unclecheese/display-logic": "^2.0"
     },
     "require-dev": {
@@ -33,11 +32,6 @@
             "Dynamic\\SiteTools\\Test\\": "tests/"
         }
     },
-    "extra": {
-        "branch-alias": {
-            "dev-master": "2.x-dev"
-        }
-    },
     "config": {
         "allow-plugins": {
             "composer/installers": true,
@@ -45,5 +39,10 @@
             "silverstripe/recipe-plugin": true
         },
         "process-timeout": 600
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "2.x-dev"
+        }
     }
 }
