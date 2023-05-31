@@ -31,6 +31,13 @@ class HeaderImage extends DataObject
     ];
 
     /**
+     * @var string[]
+     */
+    private static $cascade_duplicates = [
+        'HeaderLink',
+    ];
+
+    /**
      * @var array
      */
     private static $owns = [

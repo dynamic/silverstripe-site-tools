@@ -31,6 +31,13 @@ class HeaderImageExtension extends DataExtension
     );
 
     /**
+     * @var string[]
+     */
+    private static $cascade_duplicates = [
+        'HeaderImage',
+    ];
+
+    /**
      * @param FieldList $fields
      */
     public function updateCMSFields(FieldList $fields)

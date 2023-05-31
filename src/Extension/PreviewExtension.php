@@ -35,6 +35,13 @@ class PreviewExtension extends DataExtension
     ];
 
     /**
+     * @var string[]
+     */
+    private static $cascade_duplicates = [
+        'PreviewImage',
+    ];
+
+    /**
      * @var array
      */
     private static $owns = [
