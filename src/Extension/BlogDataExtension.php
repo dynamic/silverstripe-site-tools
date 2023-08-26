@@ -9,7 +9,9 @@ use SilverStripe\ORM\DataExtension;
 use SilverStripe\ORM\PaginatedList;
 
 /**
+ * Class \Dynamic\SiteTools\Extension\BlogDataExtension
  *
+ * @property BlogDataExtension $owner
  */
 class BlogDataExtension extends DataExtension
 {

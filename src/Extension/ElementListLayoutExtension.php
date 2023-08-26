@@ -8,7 +8,9 @@ use SilverStripe\ORM\DataExtension;
 
 /**
  * Class ElementListLayoutExtension
- * @package Dynamic\SiteTools\Extension
+ *
+ * @property ElementListLayoutExtension $owner
+ * @property string $Columns
  */
 class ElementListLayoutExtension extends DataExtension
 {

@@ -16,7 +16,9 @@ use SilverStripe\ORM\PaginatedList;
 
 /**
  * Class BlogPostDataExtension
- * @package Dynamic\SiteTools\ORM
+ *
+ * @property BlogPostDataExtension $owner
+ * @property string $SubTitle
  */
 class BlogPostDataExtension extends DataExtension
 {

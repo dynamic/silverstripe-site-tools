@@ -10,7 +10,12 @@ use SilverStripe\ORM\DataExtension;
 
 /**
  * Class ContactDataExtension
- * @package Dynamic\SiteTools\Extension
+ *
+ * @property CompanyAddress|ContactDataExtension $owner
+ * @property string $Phone
+ * @property string $Phone2
+ * @property string $Fax
+ * @property string $Email
  */
 class ContactDataExtension extends DataExtension
 {

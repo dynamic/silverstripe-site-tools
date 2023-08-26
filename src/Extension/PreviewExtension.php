@@ -13,9 +13,11 @@ use SilverStripe\Assets\Image;
 /**
  * Class PreviewExtension.
  *
+ * @property PreviewExtension $owner
  * @property string $PreviewTitle
  * @property string $Abstract
  * @property int $PreviewImageID
+ * @method Image PreviewImage()
  */
 class PreviewExtension extends DataExtension
 {

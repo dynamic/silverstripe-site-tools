@@ -8,7 +8,9 @@ use SilverStripe\ORM\DataExtension;
 
 /**
  * Class ReviewContentDataExtension
- * @package Dynamic\SiteTools\Extension
+ *
+ * @property SiteConfig|ReviewContentDataExtension $owner
+ * @property bool $ReviewContent
  */
 class ReviewContentDataExtension extends DataExtension
 {
