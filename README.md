@@ -13,11 +13,11 @@ Tools to build common functionality in SilverStripe sites.
 
 ## Requirements
 
-* SilverStripe ^4.0
+* Silverstripe ^5
 * gorriecoe/silverstripe-linkfield ^1.0
-* silvershop/silverstripe-hasonefield ^3.0
-* symbiote/silverstripe-gridfieldextensions ^3.0
-* unclecheese/display-logic ^2.0
+* silvershop/silverstripe-hasonefield ^4
+* symbiote/silverstripe-gridfieldextensions ^4
+* unclecheese/display-logic ^3
 
 ## Installation
 
