@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.0.0](https://github.com/dynamic/silverstripe-site-tools/tree/2.0.0) (20230-08-26)
+* CI GitHub workflow by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/18
+* REFACTOR migrate in blog extensions by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/17
+* REFACTOR migrate Linkable to Link by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/19
+* REFACTOR Allow Silverstripe 5 by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/20
+* BUGFIX some has_one relations require cascade_duplicates by @muskie9 in https://github.com/dynamic/silverstripe-site-tools/pull/22
+
+
+**Full Changelog**: https://github.com/dynamic/silverstripe-site-tools/compare/1.1.1...2.0.0
+
 ## [1.1.1](https://github.com/dynamic/silverstripe-site-tools/tree/1.1.1) (2020-12-02)
 
 [Full Changelog](https://github.com/dynamic/silverstripe-site-tools/compare/1.1.0...1.1.1)
