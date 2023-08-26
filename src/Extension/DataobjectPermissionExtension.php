@@ -6,6 +6,8 @@ use SilverStripe\ORM\DataExtension;
 
 /**
  * Class DataobjectPermissionExtension.
+ *
+ * @property DataobjectPermissionExtension $owner
  */
 class DataobjectPermissionExtension extends DataExtension
 {

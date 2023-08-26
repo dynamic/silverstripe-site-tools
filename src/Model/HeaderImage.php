@@ -11,6 +11,18 @@ use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Security\Security;
 
+/**
+ * Class \Dynamic\SiteTools\Model\HeaderImage
+ *
+ * @property string $Title
+ * @property string $Content
+ * @property int $PageID
+ * @property int $HeaderLinkID
+ * @property int $ImageID
+ * @method SiteTree Page()
+ * @method Link HeaderLink()
+ * @method Image Image()
+ */
 class HeaderImage extends DataObject
 {
     /**

@@ -14,7 +14,9 @@ use SilverStripe\Forms\FieldList;
 /**
  * Class HeaderImageDataExtension.
  *
+ * @property BlockPage|CampaignLandingPage|HomePage|HeaderImageExtension $owner
  * @property int $HeaderImageID
+ * @method HeaderImage HeaderImage()
  */
 class HeaderImageExtension extends DataExtension
 {

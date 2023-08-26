@@ -7,7 +7,8 @@ use SilverStripe\Core\Extension;
 
 /**
  * Class PrevNextExtension
- * @package Dynamic\SiteTools\Extension
+ *
+ * @property PrevNextExtension $owner
  */
 class PrevNextExtension extends Extension
 {
