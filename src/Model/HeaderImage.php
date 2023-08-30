@@ -57,6 +57,21 @@ class HeaderImage extends DataObject
     ];
 
     /**
+     * @var array
+     */
+    private static $searchable_fields = [
+        'Title',
+    ];
+
+    /**
+     * @var array
+     */
+    private static $summary_fields = [
+        'Image.CMSThumbnail' => 'Image',
+        'Title',
+    ];
+
+    /**
      * @var string
      */
     private static $table_name = 'HeaderImage';
