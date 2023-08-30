@@ -7,7 +7,7 @@ use SilverStripe\ORM\DataExtension;
 /**
  * Class DataobjectPermissionExtension.
  *
- * @property DataobjectPermissionExtension $owner
+ * @property EditableCustomRule|EditableFormField|DataobjectPermissionExtension $owner
  */
 class DataobjectPermissionExtension extends DataExtension
 {

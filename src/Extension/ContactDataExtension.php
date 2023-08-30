@@ -11,7 +11,7 @@ use SilverStripe\ORM\DataExtension;
 /**
  * Class ContactDataExtension
  *
- * @property CompanyAddress|ContactDataExtension $owner
+ * @property ContactDataExtension $owner
  * @property string $Phone
  * @property string $Phone2
  * @property string $Fax
