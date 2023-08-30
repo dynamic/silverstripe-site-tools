@@ -2,14 +2,17 @@
 
 namespace Dynamic\SiteTools\Extension;
 
-use Dynamic\SiteTools\Model\HeaderImage;
-use SilverShop\HasOneField\HasOneButtonField;
-use SilverStripe\Forms\FieldGroup;
-use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
-use SilverStripe\Forms\HiddenField;
-use SilverStripe\Forms\LiteralField;
-use SilverStripe\ORM\DataExtension;
+use Dynamic\Base\Page\HomePage;
+use Dynamic\Base\Page\BlockPage;
 use SilverStripe\Forms\FieldList;
+use SilverStripe\Forms\FieldGroup;
+use SilverStripe\Forms\HiddenField;
+use SilverStripe\ORM\DataExtension;
+use SilverStripe\Forms\LiteralField;
+use Dynamic\SiteTools\Model\HeaderImage;
+use Dynamic\Base\Page\CampaignLandingPage;
+use SilverShop\HasOneField\HasOneButtonField;
+use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 
 /**
  * Class HeaderImageDataExtension.
@@ -39,24 +42,18 @@ class HeaderImageExtension extends DataExtension
      */
     public function updateCMSFields(FieldList $fields)
     {
-        $fields->removeByName("HeaderImageID");
+        $fields->replace(
+            'HeaderImageID',
+            $header_image = HasOneButtonField::create(
+                $this->owner,
+                'HeaderImage',
+                ''
+            )
+        );
 
-        if ($this->owner->HeaderImage()->exists()) {
-            $img_field = LiteralField::create("img", $this->owner->HeaderImage()->Image()->ScaleHeight(100));
-        } else {
-            $img_field = HiddenField::create('img', '', '');
-        }
-
-        $header_field = FieldGroup::create(
-            $img_field,
-            $headerHasOne = HasOneButtonField::create($this->owner, "HeaderImage", '', '')
-        )->setTitle('Header Image');
-
-        $headerHasOne->getConfig()->removeComponentsByType(GridFieldAddExistingAutocompleter::class);
-
-        $fields->insertAfter(
-            'Title',
-            $header_field
+        $fields->insertBefore(
+            'Content',
+            $header_image
         );
     }
 
