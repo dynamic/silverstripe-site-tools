@@ -1,5 +1,14 @@
 # Changelog
 
+## [2.0.1](https://github.com/dynamic/silverstripe-site-tools/tree/2.0.1) (20230-08-30)
+* REFACTOR update for Silverstripe 5 by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/23
+* Docblock update by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/24
+* REFACTOR HeaderImage adjustments by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/25
+* REFACTOR docblock adjustments by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/26
+
+
+**Full Changelog**: https://github.com/dynamic/silverstripe-site-tools/compare/2.0.0...2.0.1
+
 ## [2.0.0](https://github.com/dynamic/silverstripe-site-tools/tree/2.0.0) (20230-08-26)
 * CI GitHub workflow by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/18
 * REFACTOR migrate in blog extensions by @jsirish in https://github.com/dynamic/silverstripe-site-tools/pull/17
