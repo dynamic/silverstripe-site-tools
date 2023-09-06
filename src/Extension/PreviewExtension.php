@@ -13,7 +13,7 @@ use SilverStripe\Assets\Image;
 /**
  * Class PreviewExtension.
  *
- * @property BlogPost|PreviewExtension $owner
+ * @property PreviewExtension $owner
  * @property string $PreviewTitle
  * @property string $Abstract
  * @property int $PreviewImageID
