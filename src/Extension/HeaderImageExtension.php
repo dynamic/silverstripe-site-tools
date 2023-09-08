@@ -17,7 +17,7 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 /**
  * Class HeaderImageDataExtension.
  *
- * @property BlockPage|CampaignLandingPage|HomePage|HeaderImageExtension $owner
+ * @property HeaderImageExtension $owner
  * @property int $HeaderImageID
  * @method HeaderImage HeaderImage()
  */
