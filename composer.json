@@ -22,6 +22,7 @@
         "unclecheese/display-logic": "^3.0"
     },
     "require-dev": {
+        "dnadesign/silverstripe-elemental": "^5",
         "silverstripe/recipe-testing": "^3.0"
     },
     "minimum-stability": "dev",
