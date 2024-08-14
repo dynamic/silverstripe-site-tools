@@ -15,8 +15,8 @@
         }
     ],
     "require": {
-        "gorriecoe/silverstripe-linkfield": "^1.0",
         "silvershop/silverstripe-hasonefield": "^4.0",
+        "silverstripe/linkfield": "^4.0",
         "silverstripe/recipe-cms": "^5",
         "symbiote/silverstripe-gridfieldextensions": "^4",
         "unclecheese/display-logic": "^3.0"
