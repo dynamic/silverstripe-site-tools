@@ -2,14 +2,14 @@
 
 namespace Dynamic\SiteTools\Model;
 
-use gorriecoe\Link\Models\Link;
-use gorriecoe\LinkField\LinkField;
-use SilverStripe\AssetAdmin\Forms\UploadField;
 use SilverStripe\Assets\Image;
-use SilverStripe\CMS\Model\SiteTree;
-use SilverStripe\Forms\FieldList;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Forms\FieldList;
 use SilverStripe\Security\Security;
+use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\LinkField\Models\Link;
+use SilverStripe\LinkField\Form\LinkField;
+use SilverStripe\AssetAdmin\Forms\UploadField;
 
 /**
  * Class \Dynamic\SiteTools\Model\HeaderImage
@@ -27,6 +27,7 @@ class HeaderImage extends DataObject
 {
     /**
      * @var array
+     * @config
      */
     private static $db = [
         'Title' => 'Varchar(255)',
@@ -35,6 +36,7 @@ class HeaderImage extends DataObject
 
     /**
      * @var array
+     * @config
      */
     private static $has_one = [
         'Page' => SiteTree::class,
@@ -44,6 +46,7 @@ class HeaderImage extends DataObject
 
     /**
      * @var string[]
+     * @config
      */
     private static $cascade_duplicates = [
         'HeaderLink',
@@ -51,6 +54,7 @@ class HeaderImage extends DataObject
 
     /**
      * @var array
+     * @config
      */
     private static $owns = [
         'Image',
@@ -58,6 +62,7 @@ class HeaderImage extends DataObject
 
     /**
      * @var array
+     * @config
      */
     private static $searchable_fields = [
         'Title',
@@ -65,6 +70,7 @@ class HeaderImage extends DataObject
 
     /**
      * @var array
+     * @config
      */
     private static $summary_fields = [
         'Image.CMSThumbnail' => 'Image',
@@ -73,6 +79,7 @@ class HeaderImage extends DataObject
 
     /**
      * @var string
+     * @config
      */
     private static $table_name = 'HeaderImage';
 
