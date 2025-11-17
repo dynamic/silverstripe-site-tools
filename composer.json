@@ -15,15 +15,16 @@
         }
     ],
     "require": {
-        "silvershop/silverstripe-hasonefield": "^4.0",
-        "silverstripe/linkfield": "^4.0",
-        "silverstripe/recipe-cms": "^5",
-        "symbiote/silverstripe-gridfieldextensions": "^4",
-        "unclecheese/display-logic": "^3.0"
+        "php": "^8.3 || ^8.4",
+        "silvershop/silverstripe-hasonefield": "^5.0",
+        "silverstripe/linkfield": "^5.0",
+        "silverstripe/recipe-cms": "^6",
+        "symbiote/silverstripe-gridfieldextensions": "^5",
+        "unclecheese/display-logic": "^4.0"
     },
     "require-dev": {
-        "dnadesign/silverstripe-elemental": "^5",
-        "silverstripe/recipe-testing": "^3.0"
+        "dnadesign/silverstripe-elemental": "^6",
+        "silverstripe/recipe-testing": "^4.0"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -43,7 +44,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "4.x-dev"
+            "dev-5.0/ss6-upgrade": "5.0.x-dev"
         }
     }
 }

@@ -5,7 +5,7 @@ namespace Dynamic\SiteTools\Extension;
 use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
 use SilverStripe\ORM\ArrayList;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\ORM\PaginatedList;
 
 /**
@@ -13,7 +13,7 @@ use SilverStripe\ORM\PaginatedList;
  *
  * @property BlogDataExtension $owner
  */
-class BlogDataExtension extends DataExtension
+class BlogDataExtension extends Extension
 {
     /**
      * @param $tags

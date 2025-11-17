@@ -7,7 +7,7 @@ use Dynamic\Base\Page\BlockPage;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\FieldGroup;
 use SilverStripe\Forms\HiddenField;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\Forms\LiteralField;
 use Dynamic\SiteTools\Model\HeaderImage;
 use Dynamic\Base\Page\CampaignLandingPage;
@@ -21,7 +21,7 @@ use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
  * @property int $HeaderImageID
  * @method HeaderImage HeaderImage()
  */
-class HeaderImageExtension extends DataExtension
+class HeaderImageExtension extends Extension
 {
     /**
      * @var array

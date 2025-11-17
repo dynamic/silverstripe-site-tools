@@ -2,7 +2,7 @@
 
 namespace Dynamic\SiteTools\Extension;
 
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\TextField;
 use SilverStripe\Forms\HTMLEditor\HtmlEditorField;
@@ -19,7 +19,7 @@ use SilverStripe\Assets\Image;
  * @property int $PreviewImageID
  * @method Image PreviewImage()
  */
-class PreviewExtension extends DataExtension
+class PreviewExtension extends Extension
 {
     /**
      * @var array

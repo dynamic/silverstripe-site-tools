@@ -2,14 +2,14 @@
 
 namespace Dynamic\SiteTools\Extension;
 
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
 /**
  * Class DataobjectPermissionExtension.
  *
  * @property EditableCustomRule|EditableFormField|DataobjectPermissionExtension $owner
  */
-class DataobjectPermissionExtension extends DataExtension
+class DataobjectPermissionExtension extends Extension
 {
     /**
      * @param null $member

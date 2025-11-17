@@ -6,7 +6,7 @@ use SilverStripe\Core\Config\Config;
 use SilverStripe\Forms\EmailField;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\TextField;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
 /**
  * Class ContactDataExtension
@@ -17,7 +17,7 @@ use SilverStripe\ORM\DataExtension;
  * @property string $Fax
  * @property string $Email
  */
-class ContactDataExtension extends DataExtension
+class ContactDataExtension extends Extension
 {
     /**
      * @var array
