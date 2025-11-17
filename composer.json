@@ -44,7 +44,6 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "4.x-dev",
             "dev-5.0/ss6-upgrade": "5.0.x-dev"
         }
     }
