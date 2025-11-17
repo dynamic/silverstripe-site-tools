@@ -9,7 +9,7 @@ use SilverStripe\Control\Director;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\TextField;
 use SilverStripe\ORM\ArrayList;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\ORM\DataList;
 use SilverStripe\ORM\FieldType\DBHTMLText;
 use SilverStripe\ORM\PaginatedList;
@@ -20,7 +20,7 @@ use SilverStripe\ORM\PaginatedList;
  * @property BlogPostDataExtension $owner
  * @property string $SubTitle
  */
-class BlogPostDataExtension extends DataExtension
+class BlogPostDataExtension extends Extension
 {
     /**
      * @var array

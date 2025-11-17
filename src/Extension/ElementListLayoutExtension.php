@@ -4,7 +4,7 @@ namespace Dynamic\SiteTools\Extension;
 
 use SilverStripe\Forms\DropdownField;
 use SilverStripe\Forms\FieldList;
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
 /**
  * Class ElementListLayoutExtension
@@ -12,7 +12,7 @@ use SilverStripe\ORM\DataExtension;
  * @property ElementListLayoutExtension $owner
  * @property string $Columns
  */
-class ElementListLayoutExtension extends DataExtension
+class ElementListLayoutExtension extends Extension
 {
     /**
      * @var array
