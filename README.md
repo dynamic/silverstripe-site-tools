@@ -2,9 +2,12 @@
 
 Utility extensions and form fields for building common SilverStripe site functionality.
 
-[![CI](https://github.com/dynamic/silverstripe-site-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/dynamic/silverstripe-site-tools/actions/workflows/ci.yml) [![GitHub Sponsors](https://img.shields.io/github/sponsors/dynamic)](https://github.com/sponsors/dynamic)
+[![CI](https://github.com/dynamic/silverstripe-site-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/dynamic/silverstripe-site-tools/actions/workflows/ci.yml)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/dynamic?label=Sponsors&logo=GitHub%20Sponsors&style=flat&color=ea4aaa)](https://github.com/sponsors/dynamic)
 
-[![Latest Stable Version](https://poser.pugx.org/dynamic/silverstripe-site-tools/v/stable)](https://packagist.org/packages/dynamic/silverstripe-site-tools) [![Total Downloads](https://poser.pugx.org/dynamic/silverstripe-site-tools/downloads)](https://packagist.org/packages/dynamic/silverstripe-site-tools) [![Latest Unstable Version](https://poser.pugx.org/dynamic/silverstripe-site-tools/v/unstable)](https://packagist.org/packages/dynamic/silverstripe-site-tools) [![License](https://poser.pugx.org/dynamic/silverstripe-site-tools/license)](https://packagist.org/packages/dynamic/silverstripe-site-tools)
+[![Latest Stable Version](https://poser.pugx.org/dynamic/silverstripe-site-tools/v/stable)](https://packagist.org/packages/dynamic/silverstripe-site-tools)
+[![Total Downloads](https://poser.pugx.org/dynamic/silverstripe-site-tools/downloads)](https://packagist.org/packages/dynamic/silverstripe-site-tools)
+[![License](https://poser.pugx.org/dynamic/silverstripe-site-tools/license)](https://packagist.org/packages/dynamic/silverstripe-site-tools)
 
 
 ## Requirements
