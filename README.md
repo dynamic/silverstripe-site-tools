@@ -1,6 +1,6 @@
-# Silvertripe Site Tools
+# SilverStripe Site Tools
 
-Tools to build common functionality in SilverStripe sites.
+Utility extensions and form fields for building common SilverStripe site functionality.
 
 [![CI](https://github.com/dynamic/silverstripe-site-tools/actions/workflows/ci.yml/badge.svg)](https://github.com/dynamic/silverstripe-site-tools/actions/workflows/ci.yml) [![GitHub Sponsors](https://img.shields.io/github/sponsors/dynamic)](https://github.com/sponsors/dynamic)
 
@@ -9,11 +9,21 @@ Tools to build common functionality in SilverStripe sites.
 
 ## Requirements
 
-* Silverstripe ^6
+* SilverStripe ^6
+* PHP ^8.1
 * silvershop/silverstripe-hasonefield ^5
 * silverstripe/linkfield ^5
 * symbiote/silverstripe-gridfieldextensions ^5
 * unclecheese/display-logic ^4
+
+## Features
+
+- **HasOne Field** - Enhanced relationship field with autocomplete and selection
+- **Display Logic** - Conditional field visibility based on form data
+- **GridField Extensions** - Enhanced data grid functionality
+- **LinkField Integration** - Seamless link management across forms
+- **Common Extensions** - Utility extensions for SilverStripe models
+- **Form Utilities** - Helper classes and methods for form development
 
 ## Installation
 
@@ -26,15 +36,14 @@ See [License](license.md)
 
 ## Upgrading from version 4
 
-SilverStripe Site Tools 5.0 is compatible with SilverStripe 6. Key changes:
+SilverStripe Site Tools 5.0 is compatible with SilverStripe 6. Key changes from v4.x:
 
 - Updated to SilverStripe CMS 6
 - Requires PHP 8.1 or higher
-- Updated all major dependencies to their SS6-compatible versions
+- All major dependencies updated to SS6-compatible versions
 
-## Upgrading from version 3
+See the [SilverStripe 6 Upgrade Guide](https://docs.silverstripe.org/en/6/upgrading/) for comprehensive upgrade information.
 
-Version 4 dropped `gorriecoe/silverstripe-linkfield` usage in favor of `silverstripe/linkfield`.
 
 ## Maintainers
  *  [Dynamic](http://www.dynamicagency.com) (<dev@dynamicagency.com>)
