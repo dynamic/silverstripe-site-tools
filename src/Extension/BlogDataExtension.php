@@ -6,7 +6,7 @@ use SilverStripe\Control\Controller;
 use SilverStripe\Control\Director;
 use SilverStripe\Model\List\ArrayList;
 use SilverStripe\Core\Extension;
-use SilverStripe\ORM\PaginatedList;
+use SilverStripe\Model\List\PaginatedList;
 
 /**
  * Class \Dynamic\SiteTools\Extension\BlogDataExtension
