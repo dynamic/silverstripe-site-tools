@@ -33,16 +33,6 @@ composer require dynamic/silverstripe-site-tools
 - **Common Extensions** - Utility extensions for SilverStripe models
 - **Form Utilities** - Helper classes and methods for form development
 
-## Upgrading from version 4
-
-SilverStripe Site Tools 5.0 is compatible with SilverStripe 6. Key changes from v4.x:
-
-- Updated to SilverStripe CMS 6
-- Requires PHP 8.1 or higher
-- All major dependencies updated to SS6-compatible versions
-
-See the [SilverStripe 6 Upgrade Guide](https://docs.silverstripe.org/en/6/upgrading/) for comprehensive upgrade information.
-
 ## Maintainers
 
  *  [Dynamic](https://www.dynamicagency.com) (<dev@dynamicagency.com>)
