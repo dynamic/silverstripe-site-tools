@@ -348,7 +348,8 @@ class OutputYieldTraitTest extends SapphireTest
     {
         $this->assertTrue(
             Director::isDev(),
-            'Deprecation only emits notices while Director::isDev() is true, and it is not during PHPUnit.'
+            'Deprecation emits notices only while Director::isDev() is true, and TestKernel no longer puts '
+            . 'the PHPUnit process in dev.'
         );
         $saved = Environment::getVariables();
         Environment::setEnv('SS_ENVIRONMENT_TYPE', 'live');
