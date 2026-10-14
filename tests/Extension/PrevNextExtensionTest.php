@@ -27,6 +27,17 @@ class PrevNextExtensionTest extends SapphireTest
     ];
 
     /**
+     * Every test in this class write()s pages, and this class has no fixture file, so the database has to be
+     * declared explicitly: FixtureTestState::testNeedsDB() only answers true for an explicit $usesDatabase or a
+     * fixture file, and until it does the per-test transaction rollback never runs. The writes reach the temp
+     * DB either way (ExtensionTestState resets the schema for $required_extensions), which is why the tests pass
+     * without it - but the rows pile up until the class finishes instead of rolling back per test.
+     *
+     * @var bool
+     */
+    protected $usesDatabase = true;
+
+    /**
      * Build a parent with two children in the same section, ordered A then B.
      *
      * @return array List of ["parent" => Page, "first" => Page, "last" => Page]

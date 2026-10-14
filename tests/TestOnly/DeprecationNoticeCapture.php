@@ -60,6 +60,12 @@ trait DeprecationNoticeCapture
      * Run $callback with deprecation notices turned on and captured, then restore the previous
      * Deprecation state so later tests in the same process are unaffected.
      *
+     * One corner is not restored: where the host already exports a truthy SS_DEPRECATION_ENABLED, isEnabled()
+     * reports that variable rather than Deprecation::$currentlyEnabled, so $wasEnabled below is true whatever the
+     * flag was and the disable() is skipped, leaving the flag true. Nothing reads it while the variable stands,
+     * since the variable takes precedence for every later isEnabled() call in the process; it would only surface
+     * if something cleared the variable afterwards.
+     *
      * @param callable $callback Work to run; its return value is discarded
      * @return array List of captured E_USER_DEPRECATED messages
      */
