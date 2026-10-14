@@ -7,6 +7,7 @@ use Dynamic\SiteTools\Model\HeaderImage;
 use Dynamic\SiteTools\Test\TestOnly\Page\BaseTestPage;
 use Dynamic\SiteTools\Test\TestOnly\Page\DeepTestPage;
 use Dynamic\SiteTools\Test\TestOnly\Page\MiddleTestPage;
+use Dynamic\SiteTools\Test\TestOnly\UnqueryableOwnerClassHeaderImage;
 use SilverStripe\CMS\Model\RedirectorPage;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Dev\SapphireTest;
@@ -182,10 +183,11 @@ class HeaderImageTest extends SapphireTest
     }
 
     /**
-     * An image owned by a page below classes the owner walk has to skip - an abstract one, and a
-     * concrete one whose inherited column was queried higher up - is still resolved through its
-     * owner. Getting the skipping wrong finds no owner at all, which falls back to site-wide page
-     * permissions and would grant this member.
+     * An image owned by a page below a class the owner walk skips - the concrete one whose
+     * inherited column was already searched higher up - is still resolved through its owner.
+     * Getting the skipping wrong finds no owner at all, which falls back to site-wide page
+     * permissions and would grant this member. The other kind of skip, a page class that cannot
+     * be queried at all, is covered by testDescendantsOfAnUnqueryableOwnerClassAreStillSearched().
      *
      * @return void
      */
@@ -232,6 +234,55 @@ class HeaderImageTest extends SapphireTest
             [$page->ID],
             $ids,
             'The owner walk must query one table per inherited column, not one per page class'
+        );
+    }
+
+    /**
+     * The page class that declares the HeaderImage relation is skipped when it cannot be queried,
+     * and being skipped must not count as having searched the page classes below it. That is the
+     * shape a site takes when HeaderImageExtension is applied to an abstract page base class.
+     *
+     * The skip is driven through {@see UnqueryableOwnerClassHeaderImage} rather than by declaring
+     * an abstract page class, because an abstract DataObject class cannot be in the class
+     * manifest while the test database is built - see that class for the mechanism.
+     *
+     * @return void
+     */
+    public function testDescendantsOfAnUnqueryableOwnerClassAreStillSearched(): void
+    {
+        $cmsAuthor = $this->objFromFixture(Member::class, 'cmsauthor');
+        $image = $this->objFromFixture(HeaderImage::class, 'deep');
+        $owner = $this->objFromFixture(DeepTestPage::class, 'deep');
+
+        $this->assertFalse(
+            $owner->canEdit($cmsAuthor),
+            'Sanity check: the owning page is closed to a plain CMS author'
+        );
+
+        $probe = UnqueryableOwnerClassHeaderImage::create();
+        $probe->ID = (int)$image->ID;
+        $probe->unqueryableClasses = [BaseTestPage::class];
+
+        // Granting here would mean no owner was found at all and the check fell back to site-wide
+        // page permissions - the outcome a skipped class used to hand to the classes below it.
+        $this->assertFalse(
+            $probe->canEdit($cmsAuthor),
+            'A page class the owner walk skips must not silence the classes below it'
+        );
+
+        $method = new ReflectionMethod(HeaderImage::class, 'getOwnerPages');
+        $method->setAccessible(true);
+
+        /** @var SiteTree[] $owners */
+        $owners = $method->invoke($probe);
+        $ids = array_map(function (SiteTree $page): int {
+            return (int)$page->ID;
+        }, $owners);
+
+        $this->assertSame(
+            [$owner->ID],
+            $ids,
+            'The classes below a skipped page class must be searched, and searched once each'
         );
     }
 

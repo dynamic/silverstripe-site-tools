@@ -155,9 +155,7 @@ class HeaderImage extends DataObject
                 continue;
             }
 
-            // ::get() resolves its DataObject through the Injector, which an abstract class
-            // cannot do.
-            if (!(new ReflectionClass($class))->isInstantiable()) {
+            if (!$this->isQueryablePageClass($class)) {
                 continue;
             }
 
@@ -182,6 +180,32 @@ class HeaderImage extends DataObject
         }
 
         return $owners;
+    }
+
+    /**
+     * Whether the owner walk may ask this page class for its records directly.
+     *
+     * SiteTree::get() resolves its DataObject through the Injector, which cannot do so for an
+     * abstract class, so a page class carrying the HeaderImage relation but not instantiable has
+     * to be skipped - and must not then be taken as having been searched on behalf of the page
+     * classes below it.
+     *
+     * Protected rather than private so the skip itself can be driven from a test. An abstract
+     * DataObject class cannot exist anywhere in the class manifest while the test database is
+     * built: TableBuilder::buildTables() runs `new $dataClass([], DataObject::CREATE_SINGLETON)`
+     * over every DataObject class in the manifest before it applies the TestOnly exclusion, so
+     * any abstract page class aborts the whole suite with "Cannot instantiate abstract class".
+     * The stand-in that overrides this is
+     * \Dynamic\SiteTools\Test\TestOnly\UnqueryableOwnerClassHeaderImage.
+     *
+     * @param string $class A SiteTree subclass the walk is considering.
+     * @return bool
+     */
+    protected function isQueryablePageClass(string $class): bool
+    {
+        // ::get() resolves its DataObject through the Injector, which an abstract class
+        // cannot do.
+        return (new ReflectionClass($class))->isInstantiable();
     }
 
     /**
