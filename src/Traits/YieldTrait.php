@@ -18,12 +18,15 @@ trait YieldTrait
      */
     public function yieldSingle($list)
     {
-        // SCOPE_GLOBAL is required by dynamic/silverstripe-site-tools#45. What it buys, verified against
-        // vendor/silverstripe/framework/src/Dev/Deprecation.php: a global-scope notice is buffered with an
-        // empty backtrace, so isCalledFromSupportedCode() returns false for it and outputNotices() never
-        // filters it as "called by supported-module code", whoever the caller is. The price is that the
-        // "Called from <call site>." suffix Deprecation would otherwise append is not built, which is why the
-        // message names the trait and method itself.
+        // SCOPE_GLOBAL is required by dynamic/silverstripe-site-tools#45: a global-scope notice is buffered with
+        // an empty backtrace, so Deprecation::isCalledFromSupportedCode() returns false for it and
+        // outputNotices() never filters it as "called by supported-module code", whoever the caller is. The
+        // price is that the "Called from <call site>." suffix Deprecation would otherwise append is not built,
+        // which is why the message names the trait and method itself.
+        //
+        // Deprecation::notice(), not noticeWithNoReplacment(): the latter's notices are hidden unless
+        // Deprecation::enable(true) is called, and a removal notice nobody sees does not do the job #45 asks
+        // for here - that the use stops before 7.0.0. The message text is the same either way.
         Deprecation::notice(
             '6.1.0',
             'YieldTrait::yieldSingle() is deprecated. Will be removed without equivalent functionality to '
