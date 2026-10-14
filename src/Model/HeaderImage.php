@@ -143,22 +143,31 @@ class HeaderImage extends DataObject
 
         $schema = DataObject::getSchema();
         $owners = [];
+        // The classes this walk has actually queried. A subclass only duplicates an ancestor's
+        // result if that ancestor was queried: an abstract class carrying the relation is skipped
+        // below because ::get() cannot work on it, and must not also silence its subclasses -
+        // that would leave the owners unfound and fall back to site-wide page permissions.
+        $queried = [];
 
         foreach (ClassInfo::subclassesFor(SiteTree::class) as $class) {
             if ($schema->hasOneComponent($class, 'HeaderImage') !== self::class) {
                 continue;
             }
 
-            // Only the class the extension is applied to carries the foreign key; a subclass of
-            // it inherits the relation and would find the same owners a second time.
-            $parent = get_parent_class($class);
-            if ($parent && $schema->hasOneComponent($parent, 'HeaderImage') === self::class) {
-                continue;
-            }
-
+            // ::get() resolves its DataObject through the Injector, which an abstract class
+            // cannot do.
             if (!(new ReflectionClass($class))->isInstantiable()) {
                 continue;
             }
+
+            // The HeaderImageID column is inherited, so a subclass of a class that was queried
+            // finds the same owners again.
+            $parent = get_parent_class($class);
+            if ($parent && isset($queried[$parent])) {
+                continue;
+            }
+
+            $queried[$class] = true;
 
             $owners = array_merge(
                 $owners,
