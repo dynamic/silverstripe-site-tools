@@ -36,10 +36,8 @@ class OutputYieldTraitTest extends SapphireTest
      * Deprecation buffers notices and emits them from a shutdown function, so they have to be flushed
      * (outputNotices()) while the handler below is still in place to be observable inside a test.
      *
-     * The callback's own return value is discarded, as in DeprecationNoticeCapture from #51: assert inside the
-     * callback, or capture through a by-reference use() clause.
-     *
-     * @param callable $callback Work to run
+     * @param callable $callback Work to run. It is passed the running list of captured notices, which it may
+     *                           take by reference to see what has been raised so far.
      * @return array List of captured E_USER_DEPRECATED messages
      */
     private function withCapturedNotices(callable $callback): array
@@ -63,7 +61,7 @@ class OutputYieldTraitTest extends SapphireTest
         };
         $this->replacedNoticeHandler = set_error_handler($handler);
         try {
-            $callback();
+            $callback($notices);
             Deprecation::outputNotices();
         } finally {
             restore_error_handler();
@@ -98,6 +96,34 @@ class OutputYieldTraitTest extends SapphireTest
     }
 
     /**
+     * Assert that exactly one of the captured notices is the deprecation this test is about.
+     *
+     * Matching is by message rather than by counting everything captured, because outputNotices() flushes
+     * whatever Deprecation had already buffered - so an unrelated deprecation raised earlier in the process
+     * lands in this list too. CI has been observed to buffer one that the local DDEV run does not, which made
+     * a bare count of the whole list environment-dependent. Filtering still pins the thing that matters: that
+     * this call raised its own notice exactly once, naming itself.
+     *
+     * @param array $notices Messages captured by withCapturedNotices()
+     * @param string $needle The "<Trait>::<method>() is deprecated." text the notice must contain
+     */
+    private function assertDeprecationNoticeRaised(array $notices, string $needle): void
+    {
+        $matching = array_values(array_filter($notices, function (string $notice) use ($needle): bool {
+            return str_contains($notice, $needle);
+        }));
+        $this->assertCount(
+            1,
+            $matching,
+            'Expected exactly one notice containing "' . $needle . '", got: ' . print_r($notices, true)
+        );
+        $this->assertStringContainsString(
+            'Will be removed without equivalent functionality to replace it in a future major release.',
+            $matching[0]
+        );
+    }
+
+    /**
      * Deprecation::notice() de-duplicates by message within one flush, so each notice assertion gets its
      * own call. Global scope is what makes the notice visible at all from a trait method, and it means the
      * message names the trait and method itself rather than being prefixed with a caller.
@@ -110,12 +136,7 @@ class OutputYieldTraitTest extends SapphireTest
             $subject->output('hello');
             ob_end_clean();
         });
-        $this->assertCount(1, $notices);
-        $this->assertStringContainsString('OutputTrait::output() is deprecated.', $notices[0]);
-        $this->assertStringContainsString(
-            'Will be removed without equivalent functionality to replace it in a future major release.',
-            $notices[0]
-        );
+        $this->assertDeprecationNoticeRaised($notices, 'OutputTrait::output() is deprecated.');
     }
 
     /**
@@ -201,19 +222,12 @@ class OutputYieldTraitTest extends SapphireTest
         $notices = $this->withCapturedNotices(function () use ($subject, $method) {
             $subject->$method(['a' => 'b']);
         });
-        $this->assertCount(1, $notices);
-        $this->assertStringContainsString($expected, $notices[0]);
-        $this->assertStringContainsString(
-            'Will be removed without equivalent functionality to replace it in a future major release.',
-            $notices[0]
-        );
+        $this->assertDeprecationNoticeRaised($notices, $expected);
     }
 
     /**
      * The notice is raised when the method is called, not when the returned generator is first iterated, and
      * the argument is still not started until iteration begins.
-     *
-     * @return void
      */
     public function testNoticeFiresOnCallAndArgumentStaysLazy(): void
     {
@@ -231,18 +245,21 @@ class OutputYieldTraitTest extends SapphireTest
             }
         };
 
-        $notices = $this->withCapturedNotices(function () use ($subject, $list) {
+        $raisedBeforeIteration = [];
+        $notices = $this->withCapturedNotices(function (&$captured) use ($subject, $list, &$raisedBeforeIteration) {
             $generator = $subject->yieldSingle($list);
             $this->assertInstanceOf(\Generator::class, $generator);
             $this->assertFalse($list->started, 'The argument must not be iterated when the generator is created.');
+            // Flush inside the capture window while only the call has happened: anything raised lazily, from
+            // inside the generator body, cannot be in $captured at this point because nothing has iterated yet.
+            Deprecation::outputNotices();
+            $raisedBeforeIteration = $captured;
             $this->assertSame(['a', 'b'], iterator_to_array($generator));
         });
 
-        // One notice, and it had already been raised by the time the generator was created - the assertion
-        // above on $list->started would have had it false either way, so the notice is what proves the call
-        // was not itself deferred into the generator body.
-        $this->assertCount(1, $notices);
-        $this->assertStringContainsString('YieldTrait::yieldSingle() is deprecated.', $notices[0]);
+        // The call alone had already raised its notice, and iterating added nothing further to the count.
+        $this->assertDeprecationNoticeRaised($raisedBeforeIteration, 'YieldTrait::yieldSingle() is deprecated.');
+        $this->assertDeprecationNoticeRaised($notices, 'YieldTrait::yieldSingle() is deprecated.');
     }
 
     /**
