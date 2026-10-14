@@ -282,6 +282,45 @@ class OutputYieldTraitTest extends SapphireTest
     }
 
     /**
+     * Pins the reason assertDeprecationNoticeRaised() matches notices by message instead of counting the whole
+     * captured list: withCapturedNotices() flushes Deprecation's entire buffer, so a notice some earlier code in
+     * the same process had already buffered arrives in the list too. That is not hypothetical - the first head of
+     * this PR failed CI's 8.4 mysql84 phpunit job ("Failed asserting that actual size 2 matches expected size 1")
+     * while passing in local DDEV, precisely because that job had a second notice buffered. This test
+     * reproduces the skew in-process, so a later "simplification" back to assertCount(1, $notices) cannot slip
+     * through on a machine that happens to have nothing else buffered.
+     */
+    public function testForeignBufferedNoticeDoesNotSkewTheNoticeAssertions(): void
+    {
+        $subject = new TraitSubject();
+        $foreign = 'ForeignDeprecation::someMethod() is deprecated.';
+        $notices = $this->withCapturedNotices(function () use ($subject, $foreign) {
+            // Stands in for whatever else a CI job buffers before this class runs. Global scope so it is not
+            // filtered as "called by supported-module code" on the way out of the buffer, same as the notices
+            // under test.
+            Deprecation::notice('6.1.0', $foreign, Deprecation::SCOPE_GLOBAL);
+            ob_start();
+            $subject->output('hello');
+            ob_end_clean();
+        });
+
+        // Precondition: the foreign notice really did land in the same captured list. Without this the test
+        // would pass on a run where no second notice was ever captured, i.e. without testing the skew at all.
+        $this->assertCount(
+            1,
+            array_values(array_filter($notices, function (string $notice) use ($foreign): bool {
+                return str_contains($notice, $foreign);
+            })),
+            'Precondition failed: the unrelated notice was not captured alongside the one under test, got: '
+            . print_r($notices, true)
+        );
+
+        // And the assertion helper still sees exactly one notice for the method under test, despite the list
+        // holding at least two.
+        $this->assertDeprecationNoticeRaised($notices, 'OutputTrait::output() is deprecated.');
+    }
+
+    /**
      * A return type added to a trait method in a minor release is a fatal signature break for a subclass that
      * overrides the method without one, so the two public yield methods have to stay untyped even though they
      * now return a private generator rather than being generators themselves. Pinning that here so a later
