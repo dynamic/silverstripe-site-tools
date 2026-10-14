@@ -73,7 +73,13 @@ class OutputYieldTraitTest extends SapphireTest
      * Known limitation, shared with DeprecationNoticeCapture from #51: Deprecation::enable() also resets
      * Deprecation::$showNoReplacementNotices to false, and there is no accessor for that flag, so a caller
      * that had turned it on is not restored by the finally block. Only the test process is affected, since
-     * notices are off by default.
+     * notices are off by default. Restoring it would mean writing to framework private statics by reflection.
+     *
+     * The same applies to one corner of Deprecation::$currentlyEnabled: when the host already exports a truthy
+     * SS_DEPRECATION_ENABLED, isEnabled() reports that variable and not the static flag, so $wasEnabled below
+     * is true whatever the flag was, and the disable() in the finally block is skipped - leaving the flag true.
+     * Nothing reads it while the variable stands, since the variable takes precedence for every later
+     * isEnabled() call in the process; it would only surface if something cleared the variable afterwards.
      *
      * @param callable $callback Work to run. It is passed the running list of captured notices, which it may
      *                           take by reference to see what has been raised so far.
