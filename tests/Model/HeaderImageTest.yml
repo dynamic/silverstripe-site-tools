@@ -1,0 +1,60 @@
+SilverStripe\Security\Group:
+  cmsauthors:
+    Title: 'HeaderImage Authors'
+  otheradmins:
+    Title: 'HeaderImage Other Authors'
+
+SilverStripe\Security\Permission:
+  cmsmain:
+    Code: CMS_ACCESS_CMSMain
+    Type: 1
+    Group: =>SilverStripe\Security\Group.cmsauthors
+
+SilverStripe\Security\Member:
+  cmsauthor:
+    FirstName: CMS
+    Surname: Author
+    Email: cmsauthor@example.com
+    Groups: =>SilverStripe\Security\Group.cmsauthors
+  nobody:
+    FirstName: No
+    Surname: Access
+    Email: nobody@example.com
+
+Dynamic\SiteTools\Model\HeaderImage:
+  restrictedredirector:
+    Title: 'Owned by a restricted redirector'
+  openredirector:
+    Title: 'Owned by an open redirector'
+  restrictederror:
+    Title: 'Owned by a restricted error page'
+  openerror:
+    Title: 'Owned by an open error page'
+
+SilverStripe\CMS\Model\RedirectorPage:
+  restricted:
+    Title: 'Restricted redirector'
+    RedirectionType: External
+    ExternalURL: 'https://example.com'
+    CanEditType: OnlyTheseUsers
+    EditorGroups: =>SilverStripe\Security\Group.otheradmins
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.restrictedredirector
+  open:
+    Title: 'Open redirector'
+    RedirectionType: External
+    ExternalURL: 'https://example.com'
+    CanEditType: LoggedInUsers
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.openredirector
+
+SilverStripe\ErrorPage\ErrorPage:
+  restricted:
+    Title: 'Restricted error page'
+    ErrorCode: 404
+    CanEditType: OnlyTheseUsers
+    EditorGroups: =>SilverStripe\Security\Group.otheradmins
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.restrictederror
+  open:
+    Title: 'Open error page'
+    ErrorCode: 500
+    CanEditType: LoggedInUsers
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.openerror

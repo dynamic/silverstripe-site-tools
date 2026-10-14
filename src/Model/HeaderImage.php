@@ -2,10 +2,14 @@
 
 namespace Dynamic\SiteTools\Model;
 
+use ReflectionClass;
 use SilverStripe\Assets\Image;
+use SilverStripe\Core\ClassInfo;
 use SilverStripe\ORM\DataObject;
 use SilverStripe\Forms\FieldList;
+use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
+use SilverStripe\SiteConfig\SiteConfig;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\LinkField\Models\Link;
 use SilverStripe\LinkField\Form\LinkField;
@@ -123,7 +127,78 @@ class HeaderImage extends DataObject
     }
 
     /**
-     * @param null $member
+     * The pages whose own HeaderImage relation points at this record, which is the only way a
+     * header image is ever owned.
+     *
+     * The HeaderImageID foreign key exists on the tables of the classes HeaderImageExtension is
+     * applied to, not on SiteTree itself, so each of those classes has to be queried separately.
+     *
+     * @return SiteTree[]
+     */
+    private function getOwnerPages(): array
+    {
+        if (!$this->isInDB()) {
+            return [];
+        }
+
+        $schema = DataObject::getSchema();
+        $owners = [];
+
+        foreach (ClassInfo::subclassesFor(SiteTree::class) as $class) {
+            if ($schema->hasOneComponent($class, 'HeaderImage') !== self::class) {
+                continue;
+            }
+
+            // Only the class the extension is applied to carries the foreign key; a subclass of
+            // it inherits the relation and would find the same owners a second time.
+            $parent = get_parent_class($class);
+            if ($parent && $schema->hasOneComponent($parent, 'HeaderImage') === self::class) {
+                continue;
+            }
+
+            if (!(new ReflectionClass($class))->isInstantiable()) {
+                continue;
+            }
+
+            $owners = array_merge(
+                $owners,
+                $class::get()->filter('HeaderImageID', $this->ID)->toArray()
+            );
+        }
+
+        return $owners;
+    }
+
+    /**
+     * Grant the permission when any owning page grants it.
+     *
+     * Without an owner - a record the add form has not written yet, or one nothing points at -
+     * fall back to whether the member may edit pages at all. DataObject::can*() is deliberately
+     * not used there: it is ADMIN-only and would lock content editors out of adding an image.
+     *
+     * @param string $method The SiteTree permission method to ask the owning page for.
+     * @param Member|null $member
+     * @return bool
+     */
+    private function canOwner(string $method, $member = null): bool
+    {
+        $owners = $this->getOwnerPages();
+
+        if ($owners) {
+            foreach ($owners as $owner) {
+                if ($owner->$method($member)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        return (bool)SiteConfig::current_site_config()->canEditPages($member);
+    }
+
+    /**
+     * @param Member|null $member
      * @return bool
      */
     public function canView($member = null)
@@ -132,15 +207,11 @@ class HeaderImage extends DataObject
             $member = Security::getCurrentUser();
         }
 
-        if ($this->Page()) {
-            return $this->Page()->canEdit($member);
-        }
-
-        return parent::canEdit($member);
+        return $this->canOwner('canEdit', $member);
     }
 
     /**
-     * @param null $member
+     * @param Member|null $member
      * @param array $context
      * @return bool
      */
@@ -150,15 +221,11 @@ class HeaderImage extends DataObject
             $member = Security::getCurrentUser();
         }
 
-        if ($this->Page()) {
-            return $this->Page()->canEdit($member);
-        }
-
-        return parent::canEdit($member);
+        return $this->canOwner('canEdit', $member);
     }
 
     /**
-     * @param null $member
+     * @param Member|null $member
      * @return bool
      */
     public function canEdit($member = null)
@@ -167,15 +234,11 @@ class HeaderImage extends DataObject
             $member = Security::getCurrentUser();
         }
 
-        if ($this->Page()) {
-            return $this->Page()->canEdit($member);
-        }
-
-        return parent::canEdit($member);
+        return $this->canOwner('canEdit', $member);
     }
 
     /**
-     * @param null $member
+     * @param Member|null $member
      * @return bool
      */
     public function canDelete($member = null)
@@ -184,10 +247,6 @@ class HeaderImage extends DataObject
             $member = Security::getCurrentUser();
         }
 
-        if ($this->Page()) {
-            return $this->Page()->canDelete($member);
-        }
-
-        return parent::canDelete($member);
+        return $this->canOwner('canDelete', $member);
     }
 }
