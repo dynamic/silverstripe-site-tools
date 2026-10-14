@@ -4,6 +4,7 @@ namespace Dynamic\SiteTools\Tests\Traits;
 
 use Dynamic\SiteTools\Test\TestOnly\Traits\TraitSubject;
 use PHPUnit\Framework\Attributes\DataProvider;
+use SilverStripe\Control\Director;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 use SilverStripe\Dev\Deprecation;
@@ -16,9 +17,9 @@ use SilverStripe\Dev\SapphireTest;
  * key/value sequences (including for an empty list), stay lazy about starting their argument, and OutputTrait
  * still echoes - or stays silent when enable_output is off.
  *
- * The notice-capturing helper below duplicates Dynamic\SiteTools\Test\TestOnly\DeprecationNoticeCapture from
- * dynamic/silverstripe-site-tools#51, which is still open and so is not on this branch's base. Whichever of the
- * two merges second should switch to the shared trait.
+ * The notice-capturing helper below duplicates Dynamic\SiteTools\Test\TestOnly\DeprecationNoticeCapture
+ * (dynamic/silverstripe-site-tools#51); whichever of the two branches merges second should switch to that
+ * shared helper.
  */
 class OutputYieldTraitTest extends SapphireTest
 {
@@ -40,6 +41,13 @@ class OutputYieldTraitTest extends SapphireTest
      * static store before $_ENV, $_SERVER and getenv(), so pinning through Environment::setEnv() covers the
      * process environment and a .env file alike. getVariables()/setVariables() are its own backup-and-restore
      * pair (the same one SapphireTest uses) and put the store back afterwards.
+     *
+     * Deprecation::isEnabled() has a second gate - it returns false unless Director::isDev() - which is not
+     * pinned here because it cannot move under SapphireTest: TestKernel's constructor pins the kernel's own
+     * environment to "dev", and BaseKernel::getEnvironment() reads that property before SS_ENVIRONMENT_TYPE.
+     * Pinning it through Environment::setEnv() would be a no-op for the same reason. That property belongs to
+     * the test kernel rather than to anything in this module, so
+     * testEnvironmentTypeDoesNotGateNoticesUnderTestKernel() is what pins it.
      *
      * @param callable $callback Work to run with notices enabled
      * @return mixed The callback's return value
@@ -182,7 +190,7 @@ class OutputYieldTraitTest extends SapphireTest
      * enable_output is set explicitly rather than relied on from its declaration: the trait's
      * "private static $enable_output = true" is not picked up once SilverStripe's config manifest is cached
      * (the echo silently stops happening after a flushed dev/build), so a test that assumed the declared
-     * default would only pass against a cold manifest. Filed as a follow-up issue; see the PR body.
+     * default would only pass against a cold manifest. Tracked as dynamic/silverstripe-site-tools#55.
      */
     public function testOutputStillEchoesStringWithLineEnding(): void
     {
@@ -283,12 +291,12 @@ class OutputYieldTraitTest extends SapphireTest
 
     /**
      * Pins the reason assertDeprecationNoticeRaised() matches notices by message instead of counting the whole
-     * captured list: withCapturedNotices() flushes Deprecation's entire buffer, so a notice some earlier code in
-     * the same process had already buffered arrives in the list too. That is not hypothetical - the first head of
-     * this PR failed CI's 8.4 mysql84 phpunit job ("Failed asserting that actual size 2 matches expected size 1")
-     * while passing in local DDEV, precisely because that job had a second notice buffered. This test
-     * reproduces the skew in-process, so a later "simplification" back to assertCount(1, $notices) cannot slip
-     * through on a machine that happens to have nothing else buffered.
+     * captured list: withCapturedNotices() flushes Deprecation's entire buffer, and that buffer is process-wide,
+     * so a notice some earlier code in the same run had already buffered arrives in the list too. A bare count
+     * of the list is therefore environment-dependent - CI has had a second notice buffered where a local run
+     * had none, which failed a count-based assertion there while it passed here. This test reproduces the skew
+     * in-process, so a later "simplification" back to assertCount(1, $notices) cannot slip through on a machine
+     * that happens to have nothing else buffered.
      */
     public function testForeignBufferedNoticeDoesNotSkewTheNoticeAssertions(): void
     {
@@ -318,6 +326,38 @@ class OutputYieldTraitTest extends SapphireTest
         // And the assertion helper still sees exactly one notice for the method under test, despite the list
         // holding at least two.
         $this->assertDeprecationNoticeRaised($notices, 'OutputTrait::output() is deprecated.');
+    }
+
+    /**
+     * Deprecation::isEnabled() is gated on Director::isDev() as well as on SS_DEPRECATION_ENABLED, and this
+     * class pins only the latter. That is safe only because of what SapphireTest boots: TestKernel's constructor
+     * sets the kernel's own environment to "dev", and BaseKernel::getEnvironment() answers from that property
+     * before it ever reads SS_ENVIRONMENT_TYPE - so the environment type cannot turn these notices off, and
+     * pinning it through Environment::setEnv() would not work either. The guarantee belongs to the test kernel,
+     * not to this module, so it is pinned here rather than assumed: if a future framework lets the environment
+     * type through, this fails at the precondition every notice assertion quietly relies on, instead of as a
+     * dozen unrelated notice failures.
+     */
+    public function testEnvironmentTypeDoesNotGateNoticesUnderTestKernel(): void
+    {
+        $this->assertTrue(
+            Director::isDev(),
+            'Deprecation only emits notices while Director::isDev() is true, and it is not during PHPUnit.'
+        );
+        $saved = Environment::getVariables();
+        Environment::setEnv('SS_ENVIRONMENT_TYPE', 'live');
+        try {
+            $this->assertTrue(
+                Director::isDev(),
+                'SS_ENVIRONMENT_TYPE must not be able to move the test kernel out of dev, or every notice '
+                . 'assertion in this class becomes environment-dependent.'
+            );
+            $this->withDeprecationEnvPinned(function () {
+                $this->assertTrue(Deprecation::isEnabled());
+            });
+        } finally {
+            Environment::setVariables($saved);
+        }
     }
 
     /**
