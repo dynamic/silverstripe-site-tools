@@ -9,6 +9,9 @@ use SilverStripe\Assets\Image;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Forms\FieldList;
+use SilverStripe\LinkField\Models\ExternalLink;
+use SilverStripe\LinkField\Models\Link;
+use SilverStripe\Versioned\Versioned;
 
 /**
  * Class HeaderImageDataExtensionTest.
@@ -63,5 +66,43 @@ class HeaderImageExtensionTest extends SapphireTest
         $subpage->HeaderImageID = $image->ID;
         $subpage->write();
         $this->assertInstanceOf(HeaderImage::class, $subpage->getPageHeaderImage());
+    }
+
+    /**
+     * A header link is versioned, so it only renders on a published page once the header
+     * image has published it alongside itself.
+     */
+    public function testHeaderLinkIsPublishedWithItsHeaderImage()
+    {
+        $link = ExternalLink::create();
+        $link->ExternalUrl = 'https://example.com';
+        $link->write();
+
+        $headerImage = HeaderImage::create();
+        $headerImage->Title = 'Linked header';
+        $headerImage->HeaderLinkID = $link->ID;
+        $headerImage->write();
+        $headerImage->publishRecursive();
+
+        $this->assertNotNull(
+            Versioned::get_by_stage(Link::class, Versioned::DRAFT)->byID($link->ID),
+            'The link is still available on the draft stage.'
+        );
+
+        $this->assertNotNull(
+            Versioned::get_by_stage(Link::class, Versioned::LIVE)->byID($link->ID),
+            'Publishing the header image publishes the link it points at.'
+        );
+
+        Versioned::withVersionedMode(function () use ($headerImage) {
+            Versioned::set_stage(Versioned::LIVE);
+
+            $liveHeaderImage = HeaderImage::get()->byID($headerImage->ID);
+            $this->assertNotNull($liveHeaderImage);
+            $this->assertTrue(
+                $liveHeaderImage->HeaderLink()->exists(),
+                'The live header image resolves its header link.'
+            );
+        });
     }
 }
