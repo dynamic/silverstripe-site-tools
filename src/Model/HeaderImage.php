@@ -143,10 +143,11 @@ class HeaderImage extends DataObject
 
         $schema = DataObject::getSchema();
         $owners = [];
-        // The classes this walk has actually queried. A subclass only duplicates an ancestor's
-        // result if that ancestor was queried: an abstract class carrying the relation is skipped
-        // below because ::get() cannot work on it, and must not also silence its subclasses -
-        // that would leave the owners unfound and fall back to site-wide page permissions.
+        // The classes this walk has actually queried, keyed by lowercased class name. A subclass
+        // only duplicates an ancestor's result if that ancestor was queried: an abstract class
+        // carrying the relation is skipped below because ::get() cannot work on it, and must not
+        // also silence its subclasses - that would leave the owners unfound and fall back to
+        // site-wide page permissions.
         $queried = [];
 
         foreach (ClassInfo::subclassesFor(SiteTree::class) as $class) {
@@ -160,14 +161,19 @@ class HeaderImage extends DataObject
                 continue;
             }
 
-            // The HeaderImageID column is inherited, so a subclass of a class that was queried
-            // finds the same owners again.
-            $parent = get_parent_class($class);
-            if ($parent && isset($queried[$parent])) {
-                continue;
+            // The HeaderImageID column is inherited, so a descendant of a class that was queried
+            // finds the same owners again. This has to check every ancestor, not just the direct
+            // parent: a class skipped here is itself never added to $queried, so checking only the
+            // immediate parent would let each grandchild query the same owners a third time.
+            // ClassInfo::subclassesFor() lists parents before children, so any ancestor that will
+            // be queried has already been.
+            foreach (array_slice(ClassInfo::ancestry($class), 0, -1) as $ancestor) {
+                if (isset($queried[strtolower($ancestor)])) {
+                    continue 2;
+                }
             }
 
-            $queried[$class] = true;
+            $queried[strtolower($class)] = true;
 
             $owners = array_merge(
                 $owners,
