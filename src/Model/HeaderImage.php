@@ -58,6 +58,7 @@ class HeaderImage extends DataObject
      */
     private static $owns = [
         'Image',
+        'HeaderLink',
     ];
 
     /**
