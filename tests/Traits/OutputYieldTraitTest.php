@@ -3,10 +3,11 @@
 namespace Dynamic\SiteTools\Tests\Traits;
 
 use Dynamic\SiteTools\Test\TestOnly\Traits\TraitSubject;
+use PHPUnit\Framework\Attributes\DataProvider;
 use SilverStripe\Core\Config\Config;
+use SilverStripe\Core\Environment;
 use SilverStripe\Dev\Deprecation;
 use SilverStripe\Dev\SapphireTest;
-use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Class OutputYieldTraitTest
@@ -33,51 +34,24 @@ class OutputYieldTraitTest extends SapphireTest
      * Pin SS_DEPRECATION_ENABLED for the duration of $callback.
      *
      * Deprecation::isEnabled() lets that variable override Deprecation::enable() - with it set falsy,
-     * enable() is silently ignored and no notice is ever emitted - so a host or CI job exporting
-     * SS_DEPRECATION_ENABLED=false would turn every notice assertion here into a failure that has nothing to
-     * do with the code under test. SilverStripe's Environment reads $_SERVER, $_ENV and getenv(), so all three
-     * are pinned and all three are put back, including the distinction between "set to empty" and "not set".
+     * enable() is silently ignored and no notice is ever emitted - so a host exporting
+     * SS_DEPRECATION_ENABLED=false, or a project's .env setting it so, would turn every notice assertion here
+     * into a failure that has nothing to do with the code under test. Environment::getEnv() reads its own
+     * static store before $_ENV, $_SERVER and getenv(), so pinning through Environment::setEnv() covers the
+     * process environment and a .env file alike. getVariables()/setVariables() are its own backup-and-restore
+     * pair (the same one SapphireTest uses) and put the store back afterwards.
      *
      * @param callable $callback Work to run with notices enabled
      * @return mixed The callback's return value
      */
     private function withDeprecationEnvPinned(callable $callback): mixed
     {
-        $had = [
-            'server' => array_key_exists('SS_DEPRECATION_ENABLED', $_SERVER),
-            'env' => array_key_exists('SS_DEPRECATION_ENABLED', $_ENV),
-            'getenv' => getenv('SS_DEPRECATION_ENABLED') !== false,
-        ];
-        $value = [
-            'server' => $_SERVER['SS_DEPRECATION_ENABLED'] ?? null,
-            'env' => $_ENV['SS_DEPRECATION_ENABLED'] ?? null,
-            'getenv' => getenv('SS_DEPRECATION_ENABLED'),
-        ];
-        $_SERVER['SS_DEPRECATION_ENABLED'] = '1';
-        $_ENV['SS_DEPRECATION_ENABLED'] = '1';
-        putenv('SS_DEPRECATION_ENABLED=1');
+        $saved = Environment::getVariables();
+        Environment::setEnv('SS_DEPRECATION_ENABLED', '1');
         try {
             return $callback();
         } finally {
-            // putenv() with no "=" removes the variable; that must only happen if it was absent before.
-            foreach (['server', 'env'] as $target) {
-                if ($had[$target]) {
-                    if ($target === 'server') {
-                        $_SERVER['SS_DEPRECATION_ENABLED'] = $value['server'];
-                    } else {
-                        $_ENV['SS_DEPRECATION_ENABLED'] = $value['env'];
-                    }
-                } elseif ($target === 'server') {
-                    unset($_SERVER['SS_DEPRECATION_ENABLED']);
-                } else {
-                    unset($_ENV['SS_DEPRECATION_ENABLED']);
-                }
-            }
-            if ($had['getenv']) {
-                putenv('SS_DEPRECATION_ENABLED=' . $value['getenv']);
-            } else {
-                putenv('SS_DEPRECATION_ENABLED');
-            }
+            Environment::setVariables($saved);
         }
     }
 
@@ -88,6 +62,11 @@ class OutputYieldTraitTest extends SapphireTest
      * Deprecation buffers notices and emits them from a shutdown function, so they have to be flushed
      * (outputNotices()) while the handler below is still in place to be observable inside a test.
      *
+     * Known limitation, shared with DeprecationNoticeCapture from #51: Deprecation::enable() also resets
+     * Deprecation::$showNoReplacementNotices to false, and there is no accessor for that flag, so a caller
+     * that had turned it on is not restored by the finally block. Only the test process is affected, since
+     * notices are off by default.
+     *
      * @param callable $callback Work to run. It is passed the running list of captured notices, which it may
      *                           take by reference to see what has been raised so far.
      * @return array List of captured E_USER_DEPRECATED messages
@@ -95,8 +74,11 @@ class OutputYieldTraitTest extends SapphireTest
     private function withCapturedNotices(callable $callback): array
     {
         $notices = [];
-        return $this->withDeprecationEnvPinned(function () use ($callback, &$notices): array {
-            $wasEnabled = Deprecation::isEnabled();
+        // Read the prior state before the env pin: Deprecation::isEnabled() reports the pinned environment
+        // rather than Deprecation::$currentlyEnabled once SS_DEPRECATION_ENABLED is set, so reading it inside
+        // the pinned window would always say "was already enabled" and the disable() below would never run.
+        $wasEnabled = Deprecation::isEnabled();
+        return $this->withDeprecationEnvPinned(function () use ($callback, &$notices, $wasEnabled): array {
             Deprecation::enable();
             $handler = function (int $errno, string $errstr, string $errfile, int $errline) use (&$notices): bool {
                 if ($errno === E_USER_DEPRECATED) {
@@ -278,6 +260,25 @@ class OutputYieldTraitTest extends SapphireTest
             $subject->$method(['a' => 'b']);
         });
         $this->assertDeprecationNoticeRaised($notices, $expected);
+    }
+
+    /**
+     * The capture helper must leave Deprecation as it found it, or every later test in the same process
+     * inherits enabled notices and the shutdown handler that prints them. This is what the pinning of
+     * SS_DEPRECATION_ENABLED could silently break: while that variable is set, Deprecation::isEnabled() stops
+     * reporting the static flag, so a "was it enabled before?" read taken inside the pinned window is always
+     * true and nothing is ever put back.
+     */
+    public function testDeprecationEnabledStateIsRestoredAfterCapture(): void
+    {
+        $before = Deprecation::isEnabled();
+        $subject = new TraitSubject();
+        $this->withCapturedNotices(function () use ($subject) {
+            ob_start();
+            $subject->output('hello');
+            ob_end_clean();
+        });
+        $this->assertSame($before, Deprecation::isEnabled());
     }
 
     /**
