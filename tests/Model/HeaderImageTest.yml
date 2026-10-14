@@ -22,6 +22,10 @@ SilverStripe\Security\Member:
     Email: nobody@example.com
 
 Dynamic\SiteTools\Model\HeaderImage:
+  deep:
+    Title: 'Owned by a page below the classes the owner walk skips'
+  middle:
+    Title: 'Owned by a page that inherits the header image column'
   restrictedredirector:
     Title: 'Owned by a restricted redirector'
   openredirector:
@@ -30,6 +34,19 @@ Dynamic\SiteTools\Model\HeaderImage:
     Title: 'Owned by a restricted error page'
   openerror:
     Title: 'Owned by an open error page'
+
+Dynamic\SiteTools\Test\TestOnly\Page\MiddleTestPage:
+  middle:
+    Title: 'Page that inherits the header image column'
+    CanEditType: LoggedInUsers
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.middle
+
+Dynamic\SiteTools\Test\TestOnly\Page\DeepTestPage:
+  deep:
+    Title: 'Page below the classes the owner walk skips'
+    CanEditType: OnlyTheseUsers
+    EditorGroups: =>SilverStripe\Security\Group.otheradmins
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.deep
 
 SilverStripe\CMS\Model\RedirectorPage:
   restricted:

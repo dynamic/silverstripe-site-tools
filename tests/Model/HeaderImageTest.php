@@ -4,9 +4,14 @@ namespace Dynamic\SiteTools\Test\Model;
 
 use Dynamic\SiteTools\Extension\HeaderImageExtension;
 use Dynamic\SiteTools\Model\HeaderImage;
+use Dynamic\SiteTools\Test\TestOnly\Page\BaseTestPage;
+use Dynamic\SiteTools\Test\TestOnly\Page\DeepTestPage;
+use Dynamic\SiteTools\Test\TestOnly\Page\MiddleTestPage;
 use SilverStripe\CMS\Model\RedirectorPage;
+use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ErrorPage\ErrorPage;
+use ReflectionMethod;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Permission;
 
@@ -21,19 +26,34 @@ class HeaderImageTest extends SapphireTest
 {
     /**
      * HeaderImageExtension is applied to no page class by default, so apply it to two sibling
-     * page classes and check the owner is found through either of them.
+     * page classes and check the owner is found through either of them, and to a page class that
+     * has page classes of its own below it, which is the shape that makes the owner walk skip
+     * classes it cannot use.
      *
      * @var array<string, array<int, string>>
      */
     protected static $required_extensions = [
         RedirectorPage::class => [HeaderImageExtension::class],
         ErrorPage::class => [HeaderImageExtension::class],
+        BaseTestPage::class => [HeaderImageExtension::class],
     ];
 
     /**
      * @var string[]
      */
     protected static $fixture_file = 'HeaderImageTest.yml';
+
+    /**
+     * The test page classes below are TestOnly, and the temp database skips TestOnly classes
+     * unless they are listed here, which is why the page tables were missing without it.
+     *
+     * @var string[]
+     */
+    protected static $extra_dataobjects = [
+        BaseTestPage::class,
+        MiddleTestPage::class,
+        DeepTestPage::class,
+    ];
 
     /**
      * @return void
@@ -141,6 +161,9 @@ class HeaderImageTest extends SapphireTest
             'open ErrorPage' => [
                 ErrorPage::class, 'open', 'openerror',
             ],
+            'page inheriting the header image column' => [
+                MiddleTestPage::class, 'middle', 'middle',
+            ],
         ];
 
         foreach ($owners as $label => $spec) {
@@ -156,6 +179,60 @@ class HeaderImageTest extends SapphireTest
             $this->assertTrue($image->canView($cmsAuthor), "{$label} must be viewable");
             $this->assertTrue($image->canCreate($cmsAuthor), "{$label} must be creatable");
         }
+    }
+
+    /**
+     * An image owned by a page below classes the owner walk has to skip - an abstract one, and a
+     * concrete one whose inherited column was queried higher up - is still resolved through its
+     * owner. Getting the skipping wrong finds no owner at all, which falls back to site-wide page
+     * permissions and would grant this member.
+     *
+     * @return void
+     */
+    public function testOwnersBelowSkippedPageClassesAreFound(): void
+    {
+        $cmsAuthor = $this->objFromFixture(Member::class, 'cmsauthor');
+        $page = $this->objFromFixture(DeepTestPage::class, 'deep');
+        $image = $this->objFromFixture(HeaderImage::class, 'deep');
+
+        $this->assertFalse(
+            $page->canEdit($cmsAuthor),
+            'Sanity check: the owning page is closed to a plain CMS author'
+        );
+        $this->assertFalse(
+            $image->canEdit($cmsAuthor),
+            'An image owned by a deep page must not fall back to site-wide page permissions'
+        );
+        $this->assertFalse($image->canView($cmsAuthor));
+    }
+
+    /**
+     * Every owner is returned once. A class that inherits the HeaderImageID column finds the same
+     * owners as the class declaring it, and a class skipped for that reason must not let its own
+     * subclasses be queried either - the deduplication has to look at every ancestor, not just at
+     * the class a page extends.
+     *
+     * @return void
+     */
+    public function testEachOwnerIsReturnedOnce(): void
+    {
+        $image = $this->objFromFixture(HeaderImage::class, 'deep');
+        $page = $this->objFromFixture(DeepTestPage::class, 'deep');
+
+        $method = new ReflectionMethod(HeaderImage::class, 'getOwnerPages');
+        $method->setAccessible(true);
+
+        /** @var SiteTree[] $owners */
+        $owners = $method->invoke($image);
+        $ids = array_map(function (SiteTree $owner): int {
+            return (int)$owner->ID;
+        }, $owners);
+
+        $this->assertSame(
+            [$page->ID],
+            $ids,
+            'The owner walk must query one table per inherited column, not one per page class'
+        );
     }
 
     /**
