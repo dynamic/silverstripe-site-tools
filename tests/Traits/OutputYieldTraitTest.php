@@ -30,6 +30,58 @@ class OutputYieldTraitTest extends SapphireTest
     private $replacedNoticeHandler = null;
 
     /**
+     * Pin SS_DEPRECATION_ENABLED for the duration of $callback.
+     *
+     * Deprecation::isEnabled() lets that variable override Deprecation::enable() - with it set falsy,
+     * enable() is silently ignored and no notice is ever emitted - so a host or CI job exporting
+     * SS_DEPRECATION_ENABLED=false would turn every notice assertion here into a failure that has nothing to
+     * do with the code under test. SilverStripe's Environment reads $_SERVER, $_ENV and getenv(), so all three
+     * are pinned and all three are put back, including the distinction between "set to empty" and "not set".
+     *
+     * @param callable $callback Work to run with notices enabled
+     * @return mixed The callback's return value
+     */
+    private function withDeprecationEnvPinned(callable $callback): mixed
+    {
+        $had = [
+            'server' => array_key_exists('SS_DEPRECATION_ENABLED', $_SERVER),
+            'env' => array_key_exists('SS_DEPRECATION_ENABLED', $_ENV),
+            'getenv' => getenv('SS_DEPRECATION_ENABLED') !== false,
+        ];
+        $value = [
+            'server' => $_SERVER['SS_DEPRECATION_ENABLED'] ?? null,
+            'env' => $_ENV['SS_DEPRECATION_ENABLED'] ?? null,
+            'getenv' => getenv('SS_DEPRECATION_ENABLED'),
+        ];
+        $_SERVER['SS_DEPRECATION_ENABLED'] = '1';
+        $_ENV['SS_DEPRECATION_ENABLED'] = '1';
+        putenv('SS_DEPRECATION_ENABLED=1');
+        try {
+            return $callback();
+        } finally {
+            // putenv() with no "=" removes the variable; that must only happen if it was absent before.
+            foreach (['server', 'env'] as $target) {
+                if ($had[$target]) {
+                    if ($target === 'server') {
+                        $_SERVER['SS_DEPRECATION_ENABLED'] = $value['server'];
+                    } else {
+                        $_ENV['SS_DEPRECATION_ENABLED'] = $value['env'];
+                    }
+                } elseif ($target === 'server') {
+                    unset($_SERVER['SS_DEPRECATION_ENABLED']);
+                } else {
+                    unset($_ENV['SS_DEPRECATION_ENABLED']);
+                }
+            }
+            if ($had['getenv']) {
+                putenv('SS_DEPRECATION_ENABLED=' . $value['getenv']);
+            } else {
+                putenv('SS_DEPRECATION_ENABLED');
+            }
+        }
+    }
+
+    /**
      * Run $callback with deprecation notices turned on and captured, then restore the previous Deprecation
      * state so later tests in the same process are unaffected.
      *
@@ -43,34 +95,36 @@ class OutputYieldTraitTest extends SapphireTest
     private function withCapturedNotices(callable $callback): array
     {
         $notices = [];
-        $wasEnabled = Deprecation::isEnabled();
-        Deprecation::enable();
-        $handler = function (int $errno, string $errstr, string $errfile, int $errline) use (&$notices): bool {
-            if ($errno === E_USER_DEPRECATED) {
-                $notices[] = $errstr;
-                return true;
+        return $this->withDeprecationEnvPinned(function () use ($callback, &$notices): array {
+            $wasEnabled = Deprecation::isEnabled();
+            Deprecation::enable();
+            $handler = function (int $errno, string $errstr, string $errfile, int $errline) use (&$notices): bool {
+                if ($errno === E_USER_DEPRECATED) {
+                    $notices[] = $errstr;
+                    return true;
+                }
+                // Hand anything else back to the handler this one replaced (PHPUnit's). Returning false instead
+                // would route it to PHP's built-in handler, so a warning raised inside $callback would only be
+                // printed rather than recorded against the test.
+                if (is_callable($this->replacedNoticeHandler)) {
+                    $previous = $this->replacedNoticeHandler;
+                    return (bool) $previous($errno, $errstr, $errfile, $errline);
+                }
+                return false;
+            };
+            $this->replacedNoticeHandler = set_error_handler($handler);
+            try {
+                $callback($notices);
+                Deprecation::outputNotices();
+            } finally {
+                restore_error_handler();
+                $this->replacedNoticeHandler = null;
+                if (!$wasEnabled) {
+                    Deprecation::disable();
+                }
             }
-            // Hand anything else back to the handler this one replaced (PHPUnit's). Returning false instead
-            // would route it to PHP's built-in handler, so a warning raised inside $callback would only be
-            // printed rather than recorded against the test.
-            if (is_callable($this->replacedNoticeHandler)) {
-                $previous = $this->replacedNoticeHandler;
-                return (bool) $previous($errno, $errstr, $errfile, $errline);
-            }
-            return false;
-        };
-        $this->replacedNoticeHandler = set_error_handler($handler);
-        try {
-            $callback($notices);
-            Deprecation::outputNotices();
-        } finally {
-            restore_error_handler();
-            $this->replacedNoticeHandler = null;
-            if (!$wasEnabled) {
-                Deprecation::disable();
-            }
-        }
-        return $notices;
+            return $notices;
+        });
     }
 
     /**
@@ -176,15 +230,16 @@ class OutputYieldTraitTest extends SapphireTest
     }
 
     /**
-     * Characterisation test for the assumption the two tests above make by setting enable_output explicitly:
-     * what output() echoes is exactly what the resolved config says, and the declared default
-     * ("private static $enable_output = true" in the trait) resolves differently depending on whether
-     * SilverStripe's config manifest is cached - it is true on a cold manifest and null after a flushed
-     * dev/build, so it is not a stable fixture for an assertion. This asserts the echo/config coupling rather
-     * than a fixed default, so it holds in either manifest state and fails if output() ever stops honouring
-     * the flag.
+     * Characterisation test: what output() echoes matches whatever enable_output currently resolves to.
+     *
+     * It does not assert a particular default, because the trait's declared
+     * "private static $enable_output = true" was observed to resolve to true with a cold SilverStripe config
+     * manifest and to null immediately after a flushed dev/build, in this module's own DDEV, for a TestOnly
+     * class using the trait. Why that happens was not investigated (dynamic/silverstripe-site-tools#55 does),
+     * so the two tests above set the value explicitly and this one only pins the coupling between the resolved
+     * config and the echo - it fails if output() ever stops honouring the flag.
      */
-    public function testDeclaredEnableOutputDefaultIsNotStableAcrossManifestStates(): void
+    public function testOutputEchoMatchesResolvedEnableOutput(): void
     {
         $subject = new TraitSubject();
         $resolved = $subject->config()->get('enable_output');
@@ -223,6 +278,21 @@ class OutputYieldTraitTest extends SapphireTest
             $subject->$method(['a' => 'b']);
         });
         $this->assertDeprecationNoticeRaised($notices, $expected);
+    }
+
+    /**
+     * A return type added to a trait method in a minor release is a fatal signature break for a subclass that
+     * overrides the method without one, so the two public yield methods have to stay untyped even though they
+     * now return a private generator rather than being generators themselves. Pinning that here so a later
+     * "cleanup" that adds : \Generator cannot slip through as a style fix.
+     */
+    #[DataProvider('deprecatedMethodProvider')]
+    public function testYieldMethodsDeclareNoReturnType(string $method): void
+    {
+        $this->assertFalse(
+            (new \ReflectionMethod(TraitSubject::class, $method))->hasReturnType(),
+            $method . '() must not gain a return type in a notice-only release.'
+        );
     }
 
     /**
