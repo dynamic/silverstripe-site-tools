@@ -3,12 +3,22 @@ SilverStripe\Security\Group:
     Title: 'HeaderImage Authors'
   otheradmins:
     Title: 'HeaderImage Other Authors'
+  admins:
+    Title: 'HeaderImage Admins'
 
 SilverStripe\Security\Permission:
   cmsmain:
     Code: CMS_ACCESS_CMSMain
     Type: 1
     Group: =>SilverStripe\Security\Group.cmsauthors
+  othercmsmain:
+    Code: CMS_ACCESS_CMSMain
+    Type: 1
+    Group: =>SilverStripe\Security\Group.otheradmins
+  admincode:
+    Code: ADMIN
+    Type: 1
+    Group: =>SilverStripe\Security\Group.admins
 
 SilverStripe\Security\Member:
   cmsauthor:
@@ -20,6 +30,16 @@ SilverStripe\Security\Member:
     FirstName: No
     Surname: Access
     Email: nobody@example.com
+  publisher:
+    FirstName: Pub
+    Surname: Lisher
+    Email: publisher@example.com
+    Groups: =>SilverStripe\Security\Group.admins
+  pageeditor:
+    FirstName: Page
+    Surname: Editor
+    Email: pageeditor@example.com
+    Groups: =>SilverStripe\Security\Group.otheradmins
 
 Dynamic\SiteTools\Model\HeaderImage:
   deep:
@@ -34,12 +54,21 @@ Dynamic\SiteTools\Model\HeaderImage:
     Title: 'Owned by a restricted error page'
   openerror:
     Title: 'Owned by an open error page'
+  shared:
+    Title: 'Owned by both an open and a restricted page'
+  liveonly:
+    Title: 'Owned by a page that only points at it on Live'
 
 Dynamic\SiteTools\Test\TestOnly\Page\MiddleTestPage:
   middle:
     Title: 'Page that inherits the header image column'
     CanEditType: LoggedInUsers
     HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.middle
+  liveonly:
+    Title: 'Page that owns a header image on Live only'
+    CanEditType: OnlyTheseUsers
+    EditorGroups: =>SilverStripe\Security\Group.otheradmins
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.liveonly
 
 Dynamic\SiteTools\Test\TestOnly\Page\DeepTestPage:
   deep:
@@ -62,6 +91,12 @@ SilverStripe\CMS\Model\RedirectorPage:
     ExternalURL: 'https://example.com'
     CanEditType: LoggedInUsers
     HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.openredirector
+  sharedopen:
+    Title: 'Open page sharing a header image'
+    RedirectionType: External
+    ExternalURL: 'https://example.com'
+    CanEditType: LoggedInUsers
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.shared
 
 SilverStripe\ErrorPage\ErrorPage:
   restricted:
@@ -75,3 +110,9 @@ SilverStripe\ErrorPage\ErrorPage:
     ErrorCode: 500
     CanEditType: LoggedInUsers
     HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.openerror
+  sharedrestricted:
+    Title: 'Restricted page sharing a header image'
+    ErrorCode: 403
+    CanEditType: OnlyTheseUsers
+    EditorGroups: =>SilverStripe\Security\Group.otheradmins
+    HeaderImage: =>Dynamic\SiteTools\Model\HeaderImage.shared

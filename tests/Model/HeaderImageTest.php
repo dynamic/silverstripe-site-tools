@@ -287,6 +287,90 @@ class HeaderImageTest extends SapphireTest
     }
 
     /**
+     * A member the restricted owner itself lists is granted, on the same images the plain CMS
+     * author is denied. Without this the deny assertions above would only show the new code does
+     * not wrongly grant: the empty SiteTree the old code asked denies everyone, so every
+     * assertFalse there passes against the old code as well.
+     *
+     * @return void
+     */
+    public function testRestrictedOwnerGrantsItsOwnEditors(): void
+    {
+        $pageEditor = $this->objFromFixture(Member::class, 'pageeditor');
+
+        $owners = [
+            'restricted RedirectorPage' => [
+                RedirectorPage::class, 'restricted', 'restrictedredirector',
+            ],
+            'restricted ErrorPage' => [
+                ErrorPage::class, 'restricted', 'restrictederror',
+            ],
+            'page two levels below the declaring class' => [
+                DeepTestPage::class, 'deep', 'deep',
+            ],
+        ];
+
+        foreach ($owners as $label => $spec) {
+            list($class, $pageKey, $imageKey) = $spec;
+            $page = $this->objFromFixture($class, $pageKey);
+            $image = $this->objFromFixture(HeaderImage::class, $imageKey);
+
+            $this->assertTrue(
+                $page->canEdit($pageEditor),
+                "Sanity check: {$label} is open to the member it lists"
+            );
+            $this->assertTrue(
+                $image->canEdit($pageEditor),
+                "{$label}'s header image must be editable by that member"
+            );
+            $this->assertTrue(
+                $image->canView($pageEditor),
+                "{$label}'s header image must be viewable by that member"
+            );
+        }
+    }
+
+    /**
+     * An image pointed at by more than one page is only as open as its most restricted owner.
+     * The add-existing autocompleter on the HeaderImage field links any image to a page without
+     * checking who else already owns it, so granting on one permissive owner would let a member
+     * who can edit an open page edit the image shown on a page they cannot - and since HeaderImage
+     * is not versioned, that change would go live immediately.
+     *
+     * @return void
+     */
+    public function testSharedImageFollowsItsMostRestrictedOwner(): void
+    {
+        $cmsAuthor = $this->objFromFixture(Member::class, 'cmsauthor');
+        $pageEditor = $this->objFromFixture(Member::class, 'pageeditor');
+        $image = $this->objFromFixture(HeaderImage::class, 'shared');
+
+        $open = $this->objFromFixture(RedirectorPage::class, 'sharedopen');
+        $restricted = $this->objFromFixture(ErrorPage::class, 'sharedrestricted');
+
+        $this->assertTrue(
+            $open->canEdit($cmsAuthor),
+            'Sanity check: one owner is open to a plain CMS author'
+        );
+        $this->assertFalse(
+            $restricted->canEdit($cmsAuthor),
+            'Sanity check: the other owner is not'
+        );
+
+        $this->assertFalse(
+            $image->canEdit($cmsAuthor),
+            'A permissive owner must not unlock an image a restricted page also owns'
+        );
+        $this->assertFalse($image->canView($cmsAuthor), 'The same member must not see it either');
+        $this->assertFalse($image->canDelete($cmsAuthor), 'nor delete it');
+
+        // Both owners list this member, so the record stays reachable for them.
+        $this->assertTrue($open->canEdit($pageEditor), 'Sanity check: both owners list this member');
+        $this->assertTrue($restricted->canEdit($pageEditor));
+        $this->assertTrue($image->canEdit($pageEditor), 'A member every owner lists is still granted');
+    }
+
+    /**
      * Deleting is taken from the owner's canDelete(), not from its canEdit().
      *
      * @return void

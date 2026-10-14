@@ -131,7 +131,10 @@ class HeaderImage extends DataObject
      * header image is ever owned.
      *
      * The HeaderImageID foreign key exists on the tables of the classes HeaderImageExtension is
-     * applied to, not on SiteTree itself, so each of those classes has to be queried separately.
+     * applied to, not on SiteTree itself, so each class that carries the relation has to be asked
+     * separately. Duplicates are removed by record ID rather than by skipping page classes as
+     * "already covered": a class's own DataList does reach the classes below it, so a descendant
+     * is usually found twice, but that has to be checked rather than assumed.
      *
      * @return SiteTree[]
      */
@@ -142,13 +145,9 @@ class HeaderImage extends DataObject
         }
 
         $schema = DataObject::getSchema();
+        // Keyed by record ID: the same page can be reached through its own class, through a class
+        // above it, and on both stages, and is still a single owner.
         $owners = [];
-        // The classes this walk has actually queried, keyed by lowercased class name. A subclass
-        // only duplicates an ancestor's result if that ancestor was queried: an abstract class
-        // carrying the relation is skipped below because ::get() cannot work on it, and must not
-        // also silence its subclasses - that would leave the owners unfound and fall back to
-        // site-wide page permissions.
-        $queried = [];
 
         foreach (ClassInfo::subclassesFor(SiteTree::class) as $class) {
             if ($schema->hasOneComponent($class, 'HeaderImage') !== self::class) {
@@ -159,27 +158,14 @@ class HeaderImage extends DataObject
                 continue;
             }
 
-            // The HeaderImageID column is inherited, so a descendant of a class that was queried
-            // finds the same owners again. This has to check every ancestor, not just the direct
-            // parent: a class skipped here is itself never added to $queried, so checking only the
-            // immediate parent would let each grandchild query the same owners a third time.
-            // ClassInfo::subclassesFor() lists parents before children, so any ancestor that will
-            // be queried has already been.
-            foreach (array_slice(ClassInfo::ancestry($class), 0, -1) as $ancestor) {
-                if (isset($queried[strtolower($ancestor)])) {
-                    continue 2;
-                }
+            foreach ($class::get()->filter('HeaderImageID', $this->ID) as $owner) {
+                // Keyed by record ID: the same page can be reached through its own class and
+                // through a class above it, and is still a single owner.
+                $owners[(int)$owner->ID] = $owner;
             }
-
-            $queried[strtolower($class)] = true;
-
-            $owners = array_merge(
-                $owners,
-                $class::get()->filter('HeaderImageID', $this->ID)->toArray()
-            );
         }
 
-        return $owners;
+        return array_values($owners);
     }
 
     /**
@@ -209,7 +195,12 @@ class HeaderImage extends DataObject
     }
 
     /**
-     * Grant the permission when any owning page grants it.
+     * Grant the permission only when every owning page grants it.
+     *
+     * One record can be pointed at by more than one page - the add-existing autocompleter on the
+     * HeaderImage field will link any image to a page without checking who else already owns it -
+     * so granting on any single owner would let a member who can edit one open page reach the
+     * image shown on a page they cannot.
      *
      * Without an owner - a record the add form has not written yet, or one nothing points at -
      * fall back to whether the member may edit pages at all. DataObject::can*() is deliberately
@@ -225,12 +216,12 @@ class HeaderImage extends DataObject
 
         if ($owners) {
             foreach ($owners as $owner) {
-                if ($owner->$method($member)) {
-                    return true;
+                if (!$owner->$method($member)) {
+                    return false;
                 }
             }
 
-            return false;
+            return true;
         }
 
         return (bool)SiteConfig::current_site_config()->canEditPages($member);
