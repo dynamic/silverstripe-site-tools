@@ -50,11 +50,15 @@ trait OutputTrait
      */
     public function output($string)
     {
-        // SCOPE_GLOBAL is required by dynamic/silverstripe-site-tools#45: a global-scope notice is buffered with
-        // an empty backtrace, so Deprecation::isCalledFromSupportedCode() returns false for it and
-        // outputNotices() never filters it as "called by supported-module code", whoever the caller is. The
-        // price is that the "Called from <call site>." suffix Deprecation would otherwise append is not built,
-        // which is why the message names the trait and method itself.
+        // SCOPE_GLOBAL is what dynamic/silverstripe-site-tools#45 prescribes - its "Done when" clause is a grep
+        // for it. What global scope guarantees is that the notice is never filtered out: Deprecation buffers a
+        // global-scope notice with an empty backtrace, so isCalledFromSupportedCode() returns false for it and
+        // outputNotices() can never drop it as "called by supported-module code", while a SCOPE_METHOD notice
+        // is dropped whenever the call happens to come from inside a supported module. Scope also decides the
+        // message: SCOPE_METHOD would put the *using* class's method first and append "Called from <call
+        // site>.", so under global scope the message is exactly the text below - which is why it names the
+        // trait and method itself. The cost is that call-site attribution, which would say which use to remove,
+        // is not carried in the notice.
         Deprecation::notice(
             '6.1.0',
             'OutputTrait::output() is deprecated. Will be removed without equivalent functionality to '
