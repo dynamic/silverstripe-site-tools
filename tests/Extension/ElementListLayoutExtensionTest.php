@@ -34,15 +34,7 @@ class ElementListLayoutExtensionTest extends SapphireTest
         $notices = $this->withCapturedNotices(function () {
             return Injector::inst()->create(\Page::class)->getCMSFields();
         });
-        $this->assertNotEmpty($notices);
-        $this->assertStringContainsString(
-            'ElementListLayoutExtension is deprecated.',
-            implode("\n", $notices)
-        );
-        $this->assertStringContainsString(
-            'Will be removed without equivalent functionality to replace it in a future major release.',
-            implode("\n", $notices)
-        );
+        $this->assertDeprecationNoticeRaised($notices, 'ElementListLayoutExtension is deprecated.');
     }
 
     /**
