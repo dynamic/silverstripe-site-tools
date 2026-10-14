@@ -13,9 +13,9 @@ use SilverStripe\Dev\SapphireTest;
 /**
  * Class OutputYieldTraitTest
  *
- * Covers the 6.1.0 deprecation notices and the behaviour they wrap: both yield traits still produce the same
- * key/value sequences (including for an empty list), stay lazy about starting their argument, and OutputTrait
- * still echoes - or stays silent when enable_output is off.
+ * Covers the 6.1.0 deprecation notices and the behaviour they wrap: YieldTrait's two methods still produce the
+ * same key/value sequences (including for an empty list) and stay lazy about starting their argument, and
+ * OutputTrait still echoes - or stays silent when enable_output is off.
  *
  * The notice-capturing helper below duplicates Dynamic\SiteTools\Test\TestOnly\DeprecationNoticeCapture
  * (dynamic/silverstripe-site-tools#51); whichever of the two branches merges second should switch to that
@@ -175,8 +175,10 @@ class OutputYieldTraitTest extends SapphireTest
 
     /**
      * Deprecation::notice() de-duplicates by message within one flush, so each notice assertion gets its
-     * own call. Global scope is what makes the notice visible at all from a trait method, and it means the
-     * message names the trait and method itself rather than being prefixed with a caller.
+     * own call. Global scope means the emitted message is exactly the text the trait passes - no "<caller> is
+     * deprecated." prefix and no "Called from ..." suffix - which is what the assertion matches on. It also puts
+     * the notice out of reach of the supported-module filter, which for a method-scope notice looks at the file
+     * of the caller rather than at the deprecated method.
      */
     public function testOutputRaisesDeprecationNotice(): void
     {
@@ -193,10 +195,11 @@ class OutputYieldTraitTest extends SapphireTest
      * The notice wraps the method without changing what it does: with output enabled the string is still
      * echoed, with the CLI line ending appended.
      *
-     * enable_output is set explicitly rather than relied on from its declaration: the trait's
-     * "private static $enable_output = true" is not picked up once SilverStripe's config manifest is cached
-     * (the echo silently stops happening after a flushed dev/build), so a test that assumed the declared
-     * default would only pass against a cold manifest. Tracked as dynamic/silverstripe-site-tools#55.
+     * enable_output is set explicitly rather than relied on from its declaration: for a TestOnly class using
+     * the trait in this module's DDEV, the echo was observed to stop happening after a flushed dev/build and to
+     * happen again with a cold config manifest, so a test that assumed the declared default of true would only
+     * pass in one of the two states. Why was not established here (dynamic/silverstripe-site-tools#55), and the
+     * observation may be specific to TestOnly classes rather than to the trait.
      */
     public function testOutputStillEchoesStringWithLineEnding(): void
     {
@@ -228,12 +231,12 @@ class OutputYieldTraitTest extends SapphireTest
     /**
      * Characterisation test: what output() echoes matches whatever enable_output currently resolves to.
      *
-     * It does not assert a particular default, because the trait's declared
-     * "private static $enable_output = true" was observed to resolve to true with a cold SilverStripe config
-     * manifest and to null immediately after a flushed dev/build, in this module's own DDEV, for a TestOnly
-     * class using the trait. Why that happens was not investigated (dynamic/silverstripe-site-tools#55 does),
-     * so the two tests above set the value explicitly and this one only pins the coupling between the resolved
-     * config and the echo - it fails if output() ever stops honouring the flag.
+     * It does not assert a particular default, because for a TestOnly class using the trait in this module's own
+     * DDEV the echo was observed to match a declared enable_output of true with a cold SilverStripe config
+     * manifest and to stop with a warm one, immediately after a flushed dev/build. Why that happens was not
+     * established here (dynamic/silverstripe-site-tools#55 does), so the two tests above set the value
+     * explicitly and this one only pins the coupling between the resolved config and the echo - it fails if
+     * output() ever stops honouring the flag.
      */
     public function testOutputEchoMatchesResolvedEnableOutput(): void
     {
@@ -309,9 +312,9 @@ class OutputYieldTraitTest extends SapphireTest
         $subject = new TraitSubject();
         $foreign = 'ForeignDeprecation::someMethod() is deprecated.';
         $notices = $this->withCapturedNotices(function () use ($subject, $foreign) {
-            // Stands in for whatever else a CI job buffers before this class runs. Global scope so it is not
-            // filtered as "called by supported-module code" on the way out of the buffer, same as the notices
-            // under test.
+            // Stands in for whatever else a CI job buffers before this class runs. Global scope for the same
+            // two reasons as the notices under test: the message comes back exactly as written, and the
+            // supported-module filter cannot see a caller to judge.
             Deprecation::notice('6.1.0', $foreign, Deprecation::SCOPE_GLOBAL);
             ob_start();
             $subject->output('hello');

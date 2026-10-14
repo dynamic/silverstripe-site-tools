@@ -51,14 +51,17 @@ trait OutputTrait
     public function output($string)
     {
         // SCOPE_GLOBAL is what dynamic/silverstripe-site-tools#45 prescribes - its "Done when" clause is a grep
-        // for it. What global scope guarantees is that the notice is never filtered out: Deprecation buffers a
-        // global-scope notice with an empty backtrace, so isCalledFromSupportedCode() returns false for it and
-        // outputNotices() can never drop it as "called by supported-module code", while a SCOPE_METHOD notice
-        // is dropped whenever the call happens to come from inside a supported module. Scope also decides the
-        // message: SCOPE_METHOD would put the *using* class's method first and append "Called from <call
-        // site>.", so under global scope the message is exactly the text below - which is why it names the
-        // trait and method itself. The cost is that call-site attribution, which would say which use to remove,
-        // is not carried in the notice.
+        // for it. Two things follow from it here.
+        //
+        // 1. Deprecation's supported-module filter cannot drop this notice: a global-scope notice is buffered
+        //    with an empty backtrace, so isCalledFromSupportedCode() returns false for it, while a SCOPE_METHOD
+        //    notice is dropped when the file of the *caller* - not this method's own file - sits in a supported
+        //    module. Deprecation's other filter is not scope-dependent: a caller that wraps this method in
+        //    withSuppressedNotice() still has the notice dropped unless it enabled showNoReplacementNotices.
+        // 2. The message is exactly the text below. SCOPE_METHOD would put the *using* class's method first and
+        //    append "Called from <call site>.", which is why this text names the trait and method itself. The
+        //    cost is the same thing seen from the other side: no call-site attribution, so the notice cannot say
+        //    which particular use a developer should remove.
         Deprecation::notice(
             '6.1.0',
             'OutputTrait::output() is deprecated. Will be removed without equivalent functionality to '
