@@ -15,6 +15,7 @@ use SilverShop\HasOneField\HasOneButtonField;
 use SilverStripe\Forms\GridField\GridFieldAddExistingAutocompleter;
 use SilverStripe\Core\Validation\ValidationResult;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\Versioned\Versioned;
 use SilverStripe\Security\Security;
 
 /**
@@ -72,8 +73,12 @@ class HeaderImageExtension extends Extension
      * The image is asked before this page is written, so its answer comes from the owners it
      * already has; an image nothing points at yet falls back to the site-wide page edit rights.
      *
-     * Only a real change of value is checked: publishing forces every field to look changed, and a
-     * page re-saved with the same image, or one letting go of its image, takes nothing from anyone.
+     * Only a real change of value is checked, and the change is measured against the page's stored
+     * draft row rather than the in-memory record's change list: a rollback or a restore from the
+     * archive writes an older version whose change list is empty, while a publish forces every
+     * field to look changed. A page re-saved or published with the image its draft already holds,
+     * or one letting go of its image, takes nothing from anyone. A page with no draft row - a new
+     * record, or one being restored from the archive - is checked for any image it points at.
      * A write with no member logged in - a dev/build, a fixture load, a CLI task - is not checked,
      * as the ORM does not enforce can*() on writes anywhere else and those callers have no member
      * to ask about.
@@ -85,12 +90,8 @@ class HeaderImageExtension extends Extension
         $page = $this->getOwner();
         $imageID = (int)$page->HeaderImageID;
 
-        if (!$imageID || !$page->isChanged('HeaderImageID', DataObject::CHANGE_VALUE)) {
-            return;
-        }
-
         $member = Security::getCurrentUser();
-        if (!$member) {
+        if (!$imageID || !$member || $imageID === $this->getStoredDraftHeaderImageID()) {
             return;
         }
 
@@ -106,6 +107,30 @@ class HeaderImageExtension extends Extension
                 'You do not have permission to use this header image on this page.'
             )
         );
+    }
+
+    /**
+     * The HeaderImageID this page's draft row holds in the database, or 0 when it has none. A class
+     * without Versioned has a single row, which is read instead.
+     *
+     * Read fresh from the draft stage, whatever the ambient reading mode, so neither a stale
+     * in-memory record nor the stage being written decides what counts as a new link.
+     *
+     * @return int
+     */
+    private function getStoredDraftHeaderImageID(): int
+    {
+        $page = $this->getOwner();
+
+        if (!$page->isInDB()) {
+            return 0;
+        }
+
+        $stored = $page->hasExtension(Versioned::class)
+            ? Versioned::get_by_stage(get_class($page), Versioned::DRAFT)->byID($page->ID)
+            : DataObject::get(get_class($page))->byID($page->ID);
+
+        return $stored ? (int)$stored->HeaderImageID : 0;
     }
 
     /**
