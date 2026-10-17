@@ -6,6 +6,7 @@ use ReflectionClass;
 use SilverStripe\Assets\Image;
 use SilverStripe\Core\ClassInfo;
 use SilverStripe\ORM\DataObject;
+use SilverStripe\ORM\DataObjectSchema;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Security\Member;
 use SilverStripe\Security\Security;
@@ -151,8 +152,8 @@ class HeaderImage extends DataObject
         }
 
         $schema = DataObject::getSchema();
-        // Keyed by record ID: the same page is reachable through its own class, through a class
-        // above it, and on both stages, and is still a single owner.
+        // Keyed by record ID: the same page is reachable on both stages, and is still a single
+        // owner.
         $owners = [];
 
         foreach (ClassInfo::subclassesFor(SiteTree::class) as $class) {
@@ -166,6 +167,14 @@ class HeaderImage extends DataObject
                 continue;
             }
 
+            // A class list is scoped to its own class and its descendants, so the class that
+            // carries the column already covers every page below it. Asking the descendants as
+            // well would be one pair of queries per page type in a site that has dozens of them,
+            // on every permission check a GridField render makes.
+            if ($this->isCoveredByCarrierAncestor($class, $schema)) {
+                continue;
+            }
+
             foreach ($this->getOwnerPagesForClass($class) as $owner) {
                 $owners[(int)$owner->ID] = $owner;
             }
@@ -175,12 +184,40 @@ class HeaderImage extends DataObject
     }
 
     /**
+     * Whether an instantiable class above this one carries the HeaderImage column, and so is
+     * already asked for this record's owners.
+     *
+     * Only instantiable ancestors count as covering: an abstract one cannot be queried itself, so
+     * its concrete descendants still have to be asked rather than left to a class that will never
+     * be queried.
+     *
+     * @param string $class A SiteTree subclass carrying the HeaderImage relation.
+     * @param DataObjectSchema $schema
+     * @return bool
+     */
+    private function isCoveredByCarrierAncestor(string $class, DataObjectSchema $schema): bool
+    {
+        for ($parent = get_parent_class($class); $parent !== false; $parent = get_parent_class($parent)) {
+            if ($schema->hasOneComponent($parent, 'HeaderImage') !== self::class) {
+                continue;
+            }
+
+            if ((new ReflectionClass($parent))->isInstantiable()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * The records of one page class that point at this header image, on the draft and Live stages.
      *
-     * The lists are read out inside Versioned::withVersionedMode() rather than returned from it:
-     * a DataList is only queried when it is iterated, and by then the closure has restored the
-     * ambient reading mode, which is the draft stage in the CMS and would silently return nothing
-     * for the Live pass.
+     * Versioned::withVersionedMode() keeps the ambient reading mode - the draft stage in the CMS -
+     * from deciding which of the two stages either query answers. The lists are read out inside the
+     * closure rather than returned from it: that works either way here, because Versioned copies
+     * the reading mode into the DataQuery's parameters when the list is created, but reading them
+     * inside is what keeps this method's result independent of that detail.
      *
      * @param string $class A SiteTree subclass carrying the HeaderImage relation.
      * @return SiteTree[]

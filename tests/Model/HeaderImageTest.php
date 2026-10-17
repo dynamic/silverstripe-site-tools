@@ -6,6 +6,7 @@ use Dynamic\SiteTools\Extension\HeaderImageExtension;
 use Dynamic\SiteTools\Model\HeaderImage;
 use SilverStripe\CMS\Model\RedirectorPage;
 use SilverStripe\CMS\Model\SiteTree;
+use SilverStripe\CMS\Model\VirtualPage;
 use SilverStripe\Dev\SapphireTest;
 use SilverStripe\ErrorPage\ErrorPage;
 use SilverStripe\Security\Group;
@@ -36,6 +37,9 @@ class HeaderImageTest extends SapphireTest
             HeaderImageExtension::class,
         ],
         ErrorPage::class => [
+            HeaderImageExtension::class,
+        ],
+        \Page::class => [
             HeaderImageExtension::class,
         ],
     ];
@@ -207,6 +211,39 @@ class HeaderImageTest extends SapphireTest
         $restricted->write();
 
         $this->assertTrue($image->canEdit($member), 'With only the open owner left, a CMS member can edit it.');
+    }
+
+    /**
+     * An owner sitting below the class that carries the column is still found, because the walk
+     * asks the carrying class and a class list covers that class and its descendants. The walk
+     * deliberately does not ask every page class that inherits the relation, so this is what keeps
+     * that skip honest.
+     */
+    public function testOwnerBelowTheCarryingClassIsFound(): void
+    {
+        $member = $this->logInAsCmsMember();
+
+        $editors = Group::create(['Title' => 'Editors of the virtual owner']);
+        $editors->write();
+
+        $owner = VirtualPage::create([
+            'Title' => 'Virtual restricted owner',
+            'CanEditType' => 'OnlyTheseUsers',
+        ]);
+        $owner->write();
+        $owner->EditorGroups()->add($editors);
+
+        $image = $this->createHeaderImage('Owned by a virtual page', $owner);
+
+        $this->assertTrue(
+            $owner->isChanged('HeaderImageID') === false && (int)$owner->HeaderImageID === $image->ID,
+            'The pointer to the image is written on the descendant page.'
+        );
+
+        $this->assertFalse(
+            $image->canEdit($member),
+            'The restricted descendant page governs the image even though it does not carry the column.'
+        );
     }
 
     /**
