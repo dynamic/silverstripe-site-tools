@@ -180,13 +180,16 @@ class HeaderImageTest extends SapphireTest
     }
 
     /**
-     * One image can be pointed at by more than one page, through the add-existing autocompleter.
-     * The most restricted owner wins, otherwise a member who can edit any open page could reach the
-     * image shown on a page they cannot.
+     * One image can be pointed at by more than one page. The most restricted owner wins, otherwise
+     * a member who can edit any open page could reach the image shown on a page they cannot.
+     *
+     * The sharing is set up with no member logged in: HeaderImageExtension stops a member who
+     * cannot edit the image from linking it, which HeaderImageLinkValidationTest covers.
      */
     public function testSharedImageFollowsItsMostRestrictedOwner(): void
     {
         $member = $this->logInAsCmsMember();
+        $this->logOut();
 
         $image = $this->createHeaderImage('Shared between two pages');
 
@@ -201,6 +204,8 @@ class HeaderImageTest extends SapphireTest
         ]);
         $open->HeaderImageID = $image->ID;
         $open->write();
+
+        $this->logInAs($member);
 
         $this->assertFalse($image->canEdit($member), 'An open co-owner does not unlock a restricted one.');
         $this->assertFalse($image->canDelete($member), 'An open co-owner does not unlock deletion.');
