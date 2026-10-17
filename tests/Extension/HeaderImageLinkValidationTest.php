@@ -231,6 +231,104 @@ class HeaderImageLinkValidationTest extends SapphireTest
     }
 
     /**
+     * Rolling a page back to a version that pointed at an image is a new link like any other.
+     * Versioned loads the old version with an empty change list, so the check cannot rely on it.
+     */
+    public function testRollbackToAVersionWithARestrictedImageIsRefused(): void
+    {
+        // The open page once pointed at the image, then moved off it.
+        $this->openPage->HeaderImageID = $this->image->ID;
+        $this->openPage->write();
+        $linkedVersion = (int)$this->openPage->Version;
+
+        $this->openPage->HeaderImageID = 0;
+        $this->openPage->write();
+
+        $member = $this->logInAsCmsMember();
+        $this->assertFalse($this->image->canEdit($member), 'The member cannot edit the restricted image.');
+
+        $page = \Page::get()->byID($this->openPage->ID);
+
+        try {
+            $page->rollbackRecursive($linkedVersion);
+            $this->fail('Rolling back onto an image the member may not edit must not be written.');
+        } catch (ValidationException $e) {
+            $this->assertStringContainsString('permission to use this header image', $e->getMessage());
+        }
+
+        $this->assertSame(0, $this->storedImageID($page), 'The draft still points at no image.');
+    }
+
+    /**
+     * A rollback a member is allowed to make still goes through: the check refuses the image, not
+     * the rollback.
+     */
+    public function testRollbackByAnEditorOfBothPagesIsAllowed(): void
+    {
+        $this->openPage->HeaderImageID = $this->image->ID;
+        $this->openPage->write();
+        $linkedVersion = (int)$this->openPage->Version;
+
+        $this->openPage->HeaderImageID = 0;
+        $this->openPage->write();
+
+        $this->logInAsCmsMember(true);
+
+        $page = \Page::get()->byID($this->openPage->ID);
+        $page->rollbackRecursive($linkedVersion);
+
+        $this->assertSame($this->image->ID, $this->storedImageID($page), 'The draft points at the image again.');
+    }
+
+    /**
+     * Restoring an archived page that pointed at an image is a new link too: the page has no draft
+     * row to compare against while it is archived.
+     */
+    public function testRestoreFromArchiveWithARestrictedImageIsRefused(): void
+    {
+        $this->openPage->HeaderImageID = $this->image->ID;
+        $this->openPage->write();
+        $pageID = (int)$this->openPage->ID;
+        $this->openPage->doArchive();
+
+        $member = $this->logInAsCmsMember();
+        $this->assertFalse($this->image->canEdit($member), 'The member cannot edit the restricted image.');
+
+        $archived = Versioned::get_latest_version(\Page::class, $pageID);
+        $this->assertNotNull($archived, 'The archived page is still in the version history.');
+
+        try {
+            $archived->doRestoreToStage();
+            $this->fail('Restoring onto an image the member may not edit must not be written.');
+        } catch (ValidationException $e) {
+            $this->assertStringContainsString('permission to use this header image', $e->getMessage());
+        }
+
+        $this->assertNull(
+            Versioned::get_by_stage(\Page::class, Versioned::DRAFT)->byID($pageID),
+            'The page stays archived.'
+        );
+    }
+
+    /**
+     * Duplicating a page copies its header image rather than sharing it, so a member who cannot
+     * edit the original's co-owner can still duplicate the page.
+     */
+    public function testDuplicateCopiesTheImageAndIsAllowed(): void
+    {
+        $this->openPage->HeaderImageID = $this->image->ID;
+        $this->openPage->write();
+
+        $member = $this->logInAsCmsMember();
+        $this->assertFalse($this->image->canEdit($member), 'The member cannot edit the shared image.');
+
+        $copy = \Page::get()->byID($this->openPage->ID)->duplicate();
+
+        $this->assertNotSame(0, $this->storedImageID($copy), 'The copy has a header image.');
+        $this->assertNotSame($this->image->ID, $this->storedImageID($copy), 'It is a copy, not the original.');
+    }
+
+    /**
      * Letting go of an image takes nothing from anyone, so it is allowed even for an image the
      * member may not edit.
      */
