@@ -74,11 +74,12 @@ class HeaderImageExtension extends Extension
      * already has; an image nothing points at yet falls back to the site-wide page edit rights.
      *
      * Only a real change of value is checked, and the change is measured against the page's stored
-     * draft row rather than the in-memory record's change list: a rollback or a restore from the
-     * archive writes an older version whose change list is empty, while a publish forces every
-     * field to look changed. A page re-saved or published with the image its draft already holds,
-     * or one letting go of its image, takes nothing from anyone. A page with no draft row - a new
-     * record, or one being restored from the archive - is checked for any image it points at.
+     * draft and Live rows rather than the in-memory record's change list: a rollback or a restore
+     * from the archive writes an older version whose change list is empty, while a publish forces
+     * every field to look changed. A page re-saved, published or reverted to Live with an image one
+     * of its rows already holds, or one letting go of its image, takes nothing from anyone. A page
+     * with no stored row - a new record, or one being restored from the archive - is checked for
+     * any image it points at.
      * A write with no member logged in - a dev/build, a fixture load, a CLI task - is not checked,
      * as the ORM does not enforce can*() on writes anywhere else and those callers have no member
      * to ask about.
@@ -91,7 +92,7 @@ class HeaderImageExtension extends Extension
         $imageID = (int)$page->HeaderImageID;
 
         $member = Security::getCurrentUser();
-        if (!$imageID || !$member || $imageID === $this->getStoredDraftHeaderImageID()) {
+        if (!$imageID || !$member || in_array($imageID, $this->getStoredHeaderImageIDs(), true)) {
             return;
         }
 
@@ -110,27 +111,43 @@ class HeaderImageExtension extends Extension
     }
 
     /**
-     * The HeaderImageID this page's draft row holds in the database, or 0 when it has none. A class
-     * without Versioned has a single row, which is read instead.
+     * The HeaderImageIDs this page's draft and Live rows hold in the database, without the stages
+     * that have no row. A class without Versioned has a single row, which is read instead.
      *
-     * Read fresh from the draft stage, whatever the ambient reading mode, so neither a stale
-     * in-memory record nor the stage being written decides what counts as a new link.
+     * Both stages count as already linked: HeaderImage counts a page that points at an image on
+     * either stage as one of its owners, so restoring a page to the image its Live row already
+     * shows adds no owner. The rows are read fresh, whatever the ambient reading mode, so neither a
+     * stale in-memory record nor the stage being written decides what counts as a new link. They
+     * are read through the base class, so a page whose type is being changed still finds the row
+     * stored under its old class.
      *
-     * @return int
+     * @return int[]
      */
-    private function getStoredDraftHeaderImageID(): int
+    private function getStoredHeaderImageIDs(): array
     {
         $page = $this->getOwner();
 
         if (!$page->isInDB()) {
-            return 0;
+            return [];
         }
 
-        $stored = $page->hasExtension(Versioned::class)
-            ? Versioned::get_by_stage(get_class($page), Versioned::DRAFT)->byID($page->ID)
-            : DataObject::get(get_class($page))->byID($page->ID);
+        $baseClass = $page->baseClass();
 
-        return $stored ? (int)$stored->HeaderImageID : 0;
+        if (!$page->hasExtension(Versioned::class)) {
+            $stored = DataObject::get($baseClass)->byID($page->ID);
+
+            return $stored ? [(int)$stored->HeaderImageID] : [];
+        }
+
+        $ids = [];
+        foreach ([Versioned::DRAFT, Versioned::LIVE] as $stage) {
+            $stored = Versioned::get_by_stage($baseClass, $stage)->byID($page->ID);
+            if ($stored) {
+                $ids[] = (int)$stored->HeaderImageID;
+            }
+        }
+
+        return $ids;
     }
 
     /**
