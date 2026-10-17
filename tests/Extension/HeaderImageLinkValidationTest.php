@@ -4,6 +4,7 @@ namespace Dynamic\SiteTools\Tests\Extension;
 
 use Dynamic\SiteTools\Extension\HeaderImageExtension;
 use Dynamic\SiteTools\Model\HeaderImage;
+use SilverStripe\CMS\Model\RedirectorPage;
 use SilverStripe\CMS\Model\SiteTree;
 use SilverStripe\Core\Validation\ValidationException;
 use SilverStripe\Dev\SapphireTest;
@@ -308,6 +309,50 @@ class HeaderImageLinkValidationTest extends SapphireTest
             Versioned::get_by_stage(\Page::class, Versioned::DRAFT)->byID($pageID),
             'The page stays archived.'
         );
+    }
+
+    /**
+     * Changing a page's type keeps the image it already points at. The stored row is still filed
+     * under the old class while the new one is being written, so it has to be found through the
+     * base class or the unchanged image looks like a new link.
+     */
+    public function testChangingPageTypeWithUnchangedImageIsAllowed(): void
+    {
+        $this->openPage->HeaderImageID = $this->image->ID;
+        $this->openPage->write();
+
+        $member = $this->logInAsCmsMember();
+        $this->assertFalse($this->image->canEdit($member), 'The member cannot edit the shared image.');
+
+        $page = \Page::get()->byID($this->openPage->ID);
+        $changed = $page->newClassInstance(RedirectorPage::class);
+        $changed->write();
+
+        $stored = Versioned::get_by_stage(SiteTree::class, Versioned::DRAFT)->byID($page->ID);
+        $this->assertInstanceOf(RedirectorPage::class, $stored, 'The page type changed.');
+        $this->assertSame($this->image->ID, (int)$stored->HeaderImageID, 'The pointer is unchanged.');
+    }
+
+    /**
+     * Reverting a page's draft to Live brings back the image its Live row already shows. The page
+     * already owns that image through its Live row, so no owner is added and nothing is refused.
+     */
+    public function testRevertToLiveWithTheLiveImageIsAllowed(): void
+    {
+        $this->openPage->HeaderImageID = $this->image->ID;
+        $this->openPage->write();
+        $this->openPage->publishSingle();
+
+        $this->openPage->HeaderImageID = 0;
+        $this->openPage->write();
+
+        $member = $this->logInAsCmsMember();
+        $this->assertFalse($this->image->canEdit($member), 'The member cannot edit the shared image.');
+
+        $page = \Page::get()->byID($this->openPage->ID);
+        $page->doRevertToLive();
+
+        $this->assertSame($this->image->ID, $this->storedImageID($page), 'The draft points at the Live image.');
     }
 
     /**
