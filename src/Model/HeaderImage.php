@@ -143,6 +143,10 @@ class HeaderImage extends DataObject
      * during the same request that then asks who may edit the image, and a stale owner list would
      * be a stale permission answer in either direction.
      *
+     * Only SiteTree subclasses are searched. HeaderImageExtension applied to any other class still
+     * adds the relation, but records of that class are never counted as owners and do not take
+     * part in these permission checks.
+     *
      * @return SiteTree[]
      */
     private function getOwnerPages(): array
@@ -246,10 +250,12 @@ class HeaderImage extends DataObject
     /**
      * Grant the permission only when every owning page grants it.
      *
-     * One header image can be pointed at by more than one page - the add-existing autocompleter on
-     * the HeaderImage field links any image to a page without checking who else already owns it -
-     * so granting on any single owner would let a member who can edit one open page reach the
-     * image shown on a page they cannot.
+     * One header image can be pointed at by more than one page - through the add-existing
+     * autocompleter on the HeaderImage field, a write made with no member logged in, or a page
+     * that still shows it on Live - so granting on any single owner would let a member who can
+     * edit one open page reach the image shown on a page they cannot. HeaderImageExtension's
+     * validation stops a member linking an image they may not edit, which keeps this rule from
+     * being turned against an image's existing owners.
      *
      * Without an owner - a record the add form has not written yet, or one nothing points at -
      * fall back to whether the member may edit pages at all. DataObject::can*() is deliberately
