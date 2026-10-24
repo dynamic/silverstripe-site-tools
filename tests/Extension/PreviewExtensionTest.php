@@ -4,6 +4,7 @@ namespace Dynamic\SiteTools\Tests\Extension;
 
 use Dynamic\SiteTools\Tests\TestOnly\Page\TestPage;
 use SilverStripe\Assets\Image;
+use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Injector\Injector;
 use SilverStripe\Dev\SapphireTest;
 use Dynamic\SiteTools\Extension\PreviewExtension;
@@ -42,6 +43,45 @@ class PreviewExtensionTest extends SapphireTest
         $this->assertNotNull($fields->dataFieldByName('PreviewTitle'));
         $this->assertNotNull($fields->dataFieldByName('Abstract'));
         $this->assertNotNull($fields->dataFieldByName('PreviewImage'));
+    }
+
+    /**
+     * Tests the preview thumbnail field description in each configuration case.
+     */
+    public function testPreviewThumbnailDescription()
+    {
+        // no description config set: the default description applies
+        $object = Injector::inst()->create(\Page::class);
+        $fields = $object->getCMSFields();
+        $thumbnail = $fields->dataFieldByName('PreviewImage');
+        $this->assertEquals('optional, small image displayed with preview', $thumbnail->getDescription());
+
+        // only customThumbnailTitle set: its value becomes the description
+        Config::modify()->set(\Page::class, 'customThumbnailTitle', 'custom thumbnail title');
+        $object = Injector::inst()->create(\Page::class);
+        $fields = $object->getCMSFields();
+        $thumbnail = $fields->dataFieldByName('PreviewImage');
+        $this->assertEquals('custom thumbnail title', $thumbnail->getDescription());
+
+        // preview_thumbnail_field_description set: its value becomes the description
+        Config::modify()->set(\Page::class, 'preview_thumbnail_field_description', 'custom description');
+        $object = Injector::inst()->create(\Page::class);
+        $fields = $object->getCMSFields();
+        $thumbnail = $fields->dataFieldByName('PreviewImage');
+        $this->assertEquals('custom description', $thumbnail->getDescription());
+    }
+
+    /**
+     * Tests that a configured field description wins over customThumbnailTitle.
+     */
+    public function testPreviewThumbnailDescriptionPrecedence()
+    {
+        Config::modify()->set(\Page::class, 'customThumbnailTitle', 'custom thumbnail title');
+        Config::modify()->set(\Page::class, 'preview_thumbnail_field_description', 'custom description');
+        $object = Injector::inst()->create(\Page::class);
+        $fields = $object->getCMSFields();
+        $thumbnail = $fields->dataFieldByName('PreviewImage');
+        $this->assertEquals('custom description', $thumbnail->getDescription());
     }
 
     /**
