@@ -73,7 +73,7 @@ class PreviewExtension extends Extension
         }
 
         // custom field description
-        if ($thumbnail->setDescription($this->owner->config()->preview_thumbnail_field_description)) {
+        if ($this->owner->config()->preview_thumbnail_field_description) {
             $thumbnail->setDescription($this->owner->config()->preview_thumbnail_field_description);
         } elseif ($this->owner->config()->customThumbnailTitle) {
             $thumbnail->setDescription($this->owner->config()->customThumbnailTitle);
